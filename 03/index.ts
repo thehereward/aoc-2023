@@ -1,4 +1,7 @@
+import { sum } from "../common";
 import { readFile, getTimeLogger } from "../common";
+import { toKey, get3By3 } from "../common/grid";
+import { get0To } from "../common/range";
 
 const logTime = getTimeLogger();
 
@@ -36,27 +39,12 @@ const xMax = data[0].length - 1;
 
 const allSymbols = data.map((line) => line.split(""));
 
-// console.log({ allSymbols });
-
 const stars: any[] = [];
 
 numbers.forEach((number) => {
   const y = number.y;
-  const coreCells: any[] = [];
-  const indexes = [...Array(number.length).keys()].map((i) => i + number.x);
-  const allCells = indexes.flatMap((i) => {
-    return [
-      [y, i],
-      [y + 1, i],
-      [y - 1, i],
-      [y, i + 1],
-      [y + 1, i + 1],
-      [y - 1, i + 1],
-      [y, i - 1],
-      [y + 1, i - 1],
-      [y - 1, i - 1],
-    ];
-  });
+  const indexes = get0To(number.length).map((i) => i + number.x);
+  const allCells = indexes.flatMap((i) => get3By3(i, y));
 
   allCells.forEach((cell) => {
     const [y, x] = cell;
@@ -68,8 +56,7 @@ numbers.forEach((number) => {
     if (/[0-9\.]/.test(symbol)) {
       return;
     }
-    // console.log(allSymbols[y][x]);
-    // Is an engine part
+
     number.isEnginePart = true;
     if (number.hasStar) {
       return;
@@ -82,21 +69,19 @@ numbers.forEach((number) => {
   });
 });
 
-console.log(stars);
+const part1 = numbers
+  .filter((n) => n.isEnginePart)
+  .map((n) => n.number)
+  .reduce(sum);
 
-const sum = numbers.reduce((a, c) => {
-  if (c.isEnginePart) {
-    return a + c.number;
-  }
-
-  return a;
-}, 0);
+logTime("Part 1");
+console.log(part1);
 
 const starSet: Record<string, number[]> = {};
 
 stars.forEach((star) => {
   const [y, x, number] = star;
-  const key = `${y}|${x}`;
+  const key = toKey(x, y);
   if (!starSet[key]) {
     starSet[key] = [];
   }
@@ -111,11 +96,9 @@ keys.forEach((key) => {
     ratios.push(numbers[0] * numbers[1]);
   }
 });
-const answer = ratios.reduce((a, c) => a + c);
-console.log(answer);
-
-logTime("Part 1");
+const answer = ratios.reduce(sum);
 
 logTime("Part 2");
+console.log(answer);
 
 export {};
