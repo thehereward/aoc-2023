@@ -58,10 +58,33 @@ const counter = games.reduce((a, c) => {
     return possible ? a +c.gameId : a
 }, 0)
 
-console.log({ counter });
+// console.log({ counter });
 
 logTime("Part 1");
 
+const mins = games.map((c) => {
+    const start = {
+        'red': 0,
+        'blue': 0,
+        'green': 0,
+    }
+    c.drawRecords.forEach(record => {
+        if (record['red'] > start.red) start.red = record['red']
+        if (record['blue'] > start.blue) start.blue = record['blue']
+        if (record['green'] > start.green) start.green = record['green']
+    })
+
+    return start
+})
+
+const powers = mins.map(min => min.blue * min.green * min.red)
+
+console.log({powers})
+
+const answer = powers.reduce((a,c) => a + c)
+
+
+console.log({answer})
 logTime("Part 2");
 
 export { };
