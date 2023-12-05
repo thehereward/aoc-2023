@@ -13,7 +13,28 @@ const seeds = data[0]
   .split(" ")
   .map((c) => parseInt(c));
 // .slice(1, 2);
-console.log({ seeds });
+
+const seedRanges: number[][] = [];
+for (var i = 0; i < seeds.length / 2; i = i + 1) {
+  const start = seeds[i * 2];
+  const range = seeds[i * 2 + 1];
+
+  seedRanges.push([start, range]);
+}
+
+function* seedGenerator() {
+  for (var i = 0; i < seedRanges.length; i = i + 1) {
+    const range = seedRanges[i];
+    const [start, number] = range;
+    for (var j = 0; j < number; j = j + 1) {
+      yield start + j;
+    }
+  }
+}
+
+const nextSeed = seedGenerator();
+
+console.log({ seedRanges });
 data.shift();
 
 const maps: Record<string, any[]> = {};
@@ -43,7 +64,9 @@ data.forEach((line) => {
 });
 
 const mapKeps = Object.keys(maps);
-const results = seeds.map((seed) => {
+
+let min: number = Infinity;
+for (const seed of nextSeed) {
   let nu = seed;
   mapKeps.forEach((key) => {
     // console.log({ key });
@@ -68,14 +91,16 @@ const results = seeds.map((seed) => {
       nu = res;
     });
   });
-  return nu;
-});
-console.log(
-  results.reduce((a, c) => {
-    return a < c ? a : c;
-  })
-);
+  // console.log(nu);
+  min = Math.min(nu, min);
+}
+// console.log(
+//   results.reduce((a, c) => {
+//     return a < c ? a : c;
+//   })
+// );
 
+console.log({ min });
 logTime("Part 1");
 
 logTime("Part 2");
