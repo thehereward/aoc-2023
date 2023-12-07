@@ -20,7 +20,7 @@ type CardLabel =
   | "3"
   | "2";
 
-const SCORE = ["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"];
+const SCORE = ["A", "K", "Q", "T", "9", "8", "7", "6", "5", "4", "3", "2", "J"];
 
 var data = readFile("input");
 
@@ -36,7 +36,7 @@ const hands = data.map((line) => {
     hand,
     bid: parseInt(bid),
     summary,
-    handType: getHandType(summary),
+    handType: getHandTypeWithJokers(summary),
   };
 });
 
@@ -83,6 +83,41 @@ function getHandType(summary: HandSummary) {
     return 5;
   }
   return 6;
+}
+
+function getHandTypeWithJokers(summary: HandSummary) {
+  const handType = getHandType(summary);
+  const jokers = summary["J"];
+  if (!jokers) {
+    return handType;
+  }
+  switch (handType) {
+    case 0:
+      // Five kind
+      return handType;
+    case 1:
+      // Four kind
+      return 0;
+    case 2:
+      // Full House
+      return 0;
+    case 3:
+      // Three Kind
+      return 1;
+    case 4:
+      // Two Pair
+      if (jokers == 2) {
+        return 1;
+      } else {
+        return 2;
+      }
+    case 5:
+      // Pair
+      return 3;
+    case 6:
+      // High card
+      return 5;
+  }
 }
 
 function isFiveKind(summary: HandSummary) {
