@@ -7,14 +7,13 @@ const logTime = getTimeLogger();
 
 var data = readFile("input");
 const lines = data.map((line) => line.split(" ").map((c) => parseInt(c)));
-// console.log({ lines });
 
 const sequences = lines.map((line) => [line]);
 
-const answers: number[] = [];
+const part1: number[] = [];
+const part2: number[] = [];
 sequences.forEach((sequence) => {
   const initialSequence = sequence[0];
-  //   console.log(initialSequence);
   let nextSequence = initialSequence;
   let workingSequence = initialSequence;
   while (!nextSequence.every((char) => char == 0)) {
@@ -24,24 +23,23 @@ sequences.forEach((sequence) => {
       nextSequence.push(next);
     }
     workingSequence = nextSequence;
-    // console.log(nextSequence);
     sequence.push(nextSequence);
   }
 
-  //   console.log(sequence);
-  let c = 0;
+  let diffPart1 = 0;
+  let diffPart2 = 0;
   for (var i = sequence.length - 2; i >= 0; i--) {
-    const s = sequence[i];
-    const char = s[0];
-    c = char - c;
+    diffPart1 = sequence[i].slice(-1)[0] + diffPart1;
+    diffPart2 = sequence[i][0] - diffPart2;
   }
-  answers.push(c);
+  part1.push(diffPart1);
+  part2.push(diffPart2);
 });
-// console.log(answers);
 
-console.log(answers.reduce(sum));
+console.log(part1.reduce(sum));
 logTime("Part 1");
 
+console.log(part2.reduce(sum));
 logTime("Part 2");
 
 export {};
