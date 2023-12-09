@@ -32,12 +32,12 @@ sequences.forEach((sequence) => {
   let c = 0;
   for (var i = sequence.length - 2; i >= 0; i--) {
     const s = sequence[i];
-    const char = s[s.length - 1];
-    c = char + c;
+    const char = s[0];
+    c = char - c;
   }
   answers.push(c);
 });
-console.log(answers);
+// console.log(answers);
 
 console.log(answers.reduce(sum));
 logTime("Part 1");
