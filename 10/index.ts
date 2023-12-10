@@ -11,6 +11,8 @@ var lines = data.map((line) => line.split(""));
 const xMax = lines[0].length - 1;
 const yMax = lines.length - 1;
 
+// console.log({ xMax, yMax });
+
 let start: string = "";
 let startCoords: number[] = [];
 const grid: Record<string, string> = {};
@@ -67,9 +69,94 @@ console.log(maxRange);
 
 logTime("Part 1");
 
+// const numberOfCellsInLoop = Object.keys(visited).length
+// const toFlood = [[0,0], [0,yMax], [max]]
+
+const cellsInsidebyX: Record<string, boolean> = {};
+const cellsInsidebyY: string[] = [];
+
+const allCharsX: string[][] = [];
+for (var y = 0; y <= yMax; y++) {
+  var lastXWasLoop = false;
+  var inLoopX = false;
+  const chars: string[] = [];
+
+  for (var x = 0; x <= xMax; x++) {
+    const key = toKey(x, y);
+    const char = grid[key];
+    // const charNext = grid[toKey(x + 1, y)];
+    var enteringLoopX = false;
+    const currentCharIsLoop = isLoop(char);
+
+    if (!inLoopX) {
+      if (currentCharIsLoop) {
+        enteringLoopX = true;
+      }
+    } else {
+      if (currentCharIsLoop) {
+        inLoopX = false;
+      }
+    }
+
+    chars.push(inLoopX ? "I" : char);
+    if (inLoopX) {
+      cellsInsidebyX[key] = true;
+    }
+
+    if (enteringLoopX) {
+      inLoopX = true;
+    }
+    lastXWasLoop = isLoop(char);
+  }
+  allCharsX.push(chars);
+}
+
+const allCharsY: string[][] = [];
+for (var x = 0; x <= xMax; x++) {
+  var lastXWasLoop = false;
+  var inLoopX = false;
+  const chars: string[] = [];
+
+  for (var y = 0; y <= yMax; y++) {
+    const key = toKey(x, y);
+    const char = grid[key];
+    // const charNext = grid[toKey(x + 1, y)];
+    var enteringLoopX = false;
+    const currentCharIsLoop = isLoop(char);
+
+    if (!inLoopX) {
+      if (currentCharIsLoop) {
+        enteringLoopX = true;
+      }
+    } else {
+      if (currentCharIsLoop) {
+        inLoopX = false;
+      }
+    }
+
+    chars.push(inLoopX ? "I" : char);
+
+    if (inLoopX && cellsInsidebyX[key]) {
+      cellsInsidebyY.push(key);
+    }
+
+    if (enteringLoopX) {
+      inLoopX = true;
+    }
+    lastXWasLoop = isLoop(char);
+  }
+  allCharsY.push(chars);
+}
+
+console.log(cellsInsidebyY.length);
+
 logTime("Part 2");
 
 export {};
+function isLoop(char: string) {
+  return char != ".";
+}
+
 function getConnectedCells(currentCell: number[] | [number, number]) {
   const [y, x] = currentCell;
   const currentKey = toKey(x, y);
