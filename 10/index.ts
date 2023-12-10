@@ -1,6 +1,6 @@
-import { sum } from "../common";
+import { sum, max } from "../common";
 import { readFile, getTimeLogger } from "../common";
-import { toKey, get3By3, getNSEW } from "../common/grid";
+import { toKey, get3By3, getNSEW, printGrid } from "../common/grid";
 import { get0To } from "../common/range";
 
 const logTime = getTimeLogger();
@@ -11,16 +11,9 @@ var lines = data.map((line) => line.split(""));
 const xMax = lines[0].length - 1;
 const yMax = lines.length - 1;
 
-// console.log({ xMax, yMax });
-
 let start: string = "";
 let startCoords: number[] = [];
 const grid: Record<string, string> = {};
-for (var yy = -1; yy <= yMax; yy++) {
-  for (var xx = -1; xx <= xMax; xx++) {
-    grid[toKey(xx, yy)] = ".";
-  }
-}
 lines.forEach((line, y) => {
   line.forEach((char, x) => {
     grid[toKey(x, y)] = char;
@@ -31,328 +24,195 @@ lines.forEach((line, y) => {
   });
 });
 
-// console.log(grid);
-
 const visited: Record<string, number> = {};
 visited[start] = 0;
 
-var currentCell = startCoords;
-
-var cellsToVisit = [currentCell];
-
+var cellsToVisit = [startCoords];
 while (cellsToVisit.length > 0) {
   const cell = cellsToVisit.shift();
   if (!cell) {
     break;
   }
   const newCells = getConnectedCells(cell);
-  newCells.forEach((c) => cellsToVisit.push(c));
+  cellsToVisit.push(...newCells);
 }
 
-function followPath(currentCell: number[] | [number, number]) {
-  const visitableCells = getConnectedCells(currentCell);
-  if (visitableCells.length == 0) {
-    return;
-  }
-  visitableCells.forEach((cell) => followPath(cell));
-}
-
-// followPath(currentCell);
-
-const keys = Object.keys(visited);
-var maxRange: number = -Infinity;
-keys.forEach((key) => {
-  const value = visited[key];
-  maxRange = Math.max(maxRange, value);
-});
+const maxRange = Object.values(visited).reduce(max);
 console.log(maxRange);
 
 logTime("Part 1");
 
-// const numberOfCellsInLoop = Object.keys(visited).length
-// const toFlood = [[0,0], [0,yMax], [max]]
+function mapTo3x3(x: number, y: number, char: string): any[][] {
+  switch (char) {
+    case ".":
+      return [
+        [y, x, char],
+        [y + 1, x, ","],
+        [y - 1, x, ","],
+        [y, x + 1, ","],
+        [y + 1, x + 1, ","],
+        [y - 1, x + 1, ","],
+        [y, x - 1, ","],
+        [y + 1, x - 1, ","],
+        [y - 1, x - 1, ","],
+      ];
+    case "|":
+      return [
+        [y, x, char],
+        [y + 1, x, "|"],
+        [y - 1, x, "|"],
+        [y, x + 1, ","],
+        [y + 1, x + 1, ","],
+        [y - 1, x + 1, ","],
+        [y, x - 1, ","],
+        [y + 1, x - 1, ","],
+        [y - 1, x - 1, ","],
+      ];
+    case "-":
+      return [
+        [y, x, char],
+        [y + 1, x, ","],
+        [y - 1, x, ","],
+        [y, x + 1, "-"],
+        [y + 1, x + 1, ","],
+        [y - 1, x + 1, ","],
+        [y, x - 1, "-"],
+        [y + 1, x - 1, ","],
+        [y - 1, x - 1, ","],
+      ];
+    case "F":
+      return [
+        [y, x, char],
+        [y + 1, x, "|"],
+        [y - 1, x, ","],
+        [y, x + 1, "-"],
+        [y + 1, x + 1, ","],
+        [y - 1, x + 1, ","],
+        [y, x - 1, ","],
+        [y + 1, x - 1, ","],
+        [y - 1, x - 1, ","],
+      ];
+    case "7":
+      return [
+        [y, x, char],
+        [y + 1, x, "|"],
+        [y - 1, x, ","],
+        [y, x + 1, ","],
+        [y + 1, x + 1, ","],
+        [y - 1, x + 1, ","],
+        [y, x - 1, "-"],
+        [y + 1, x - 1, ","],
+        [y - 1, x - 1, ","],
+      ];
+    case "J":
+      return [
+        [y, x, char],
+        [y + 1, x, ","],
+        [y - 1, x, "|"],
+        [y, x + 1, ","],
+        [y + 1, x + 1, ","],
+        [y - 1, x + 1, ","],
+        [y, x - 1, "-"],
+        [y + 1, x - 1, ","],
+        [y - 1, x - 1, ","],
+      ];
+    case "L":
+      return [
+        [y, x, char],
+        [y + 1, x, ","],
+        [y - 1, x, "|"],
+        [y, x + 1, "-"],
+        [y + 1, x + 1, ","],
+        [y - 1, x + 1, ","],
+        [y, x - 1, ","],
+        [y + 1, x - 1, ","],
+        [y - 1, x - 1, ","],
+      ];
+    case "S":
+      return [
+        [y, x, char],
+        [y + 1, x, "S"],
+        [y - 1, x, "S"],
+        [y, x + 1, "S"],
+        [y + 1, x + 1, "S"],
+        [y - 1, x + 1, "S"],
+        [y, x - 1, "S"],
+        [y + 1, x - 1, "S"],
+        [y - 1, x - 1, "S"],
+      ];
+  }
+  return [];
+}
 
-const cellsInsidebyX: Record<string, boolean> = {};
-const cellsInsidebyY: string[] = [];
+const toBigCood = (x: number) => x * 3 + 1;
 
-const allCharsX: string[][] = [];
-const allSegmentsX: number[][] = [];
+const bigGridKey: Record<string, string> = {};
 for (var y = 0; y <= yMax; y++) {
-  var lastXWasLoop = false;
-  var inLoopX = false;
-  const chars: string[] = [];
-  const segmentsToWest: number[] = [];
-  var previousSegments = 0;
-
   for (var x = 0; x <= xMax; x++) {
-    const key = toKey(x, y);
-    const char = grid[key];
-    var enteringLoopX = false;
-    const currentCharIsLoop = isLoop(char);
-
-    if (!inLoopX) {
-      if (currentCharIsLoop) {
-        enteringLoopX = true;
-      }
-    } else {
-      if (currentCharIsLoop) {
-        inLoopX = false;
-      }
-    }
-
-    chars.push(inLoopX ? "I" : char);
-
-    if (enteringLoopX) {
-      inLoopX = true;
-    }
-    if (isLoop(char) && !connectsEast(char)) {
-      previousSegments++;
-    }
-    segmentsToWest.push(isLoop(char) ? NaN : previousSegments);
-    lastXWasLoop = isLoop(char);
+    const char = grid[toKey(x, y)];
+    const newChars = mapTo3x3(toBigCood(x), toBigCood(y), char);
+    newChars.forEach((arr) => {
+      const [y, x, char] = arr;
+      bigGridKey[toKey(x, y)] = char;
+    });
   }
-  allCharsX.push(chars);
-  allSegmentsX.push(segmentsToWest);
 }
 
-const allCharsEast: string[][] = [];
-const allSegmentsEast: number[][] = [];
+const bigGridMaxY = (yMax + 1) * 3;
+const bigGridMaxX = (xMax + 1) * 3;
+
+const floodStartCells = get0To(bigGridMaxX).map((x) => [0, x]);
+
+logTime("Before the flood");
+flood(floodStartCells, "#");
+logTime("After the flood");
+
+function flood(start: number[][], withString: string, ignore: string = "") {
+  var toFill = start;
+
+  do {
+    toFill = toFill.flatMap((cell) => {
+      const [y, x] = cell;
+      bigGridKey[toKey(x, y)] = withString;
+      const cells = get3By3(x, y);
+      const newCells = cells.filter((cell) => {
+        const [y, x] = cell;
+        if (y < 0 || x < 0 || y > bigGridMaxY || x > bigGridMaxX) {
+          return false;
+        }
+        const char = bigGridKey[toKey(x, y)];
+        if (char == "." || char == ",") {
+          bigGridKey[toKey(x, y)] = withString;
+          return true;
+        } else if (char == ignore) {
+          return false;
+        } else {
+          bigGridKey[toKey(x, y)] = withString;
+          return false;
+        }
+      });
+      return newCells;
+    });
+  } while (toFill.length > 0);
+}
+
+const actualChars: string[] = [];
 for (var y = 0; y <= yMax; y++) {
-  var lastXWasLoop = false;
-  var inLoopX = false;
-  const chars: string[] = [];
-  const segmentsToEast: number[] = [];
-  var previousSegments = 0;
-
-  for (var x = xMax; x >= 0; x--) {
-    const key = toKey(x, y);
-    const char = grid[key];
-    var enteringLoopX = false;
-    const currentCharIsLoop = isLoop(char);
-
-    if (!inLoopX) {
-      if (currentCharIsLoop) {
-        enteringLoopX = true;
-      }
-    } else {
-      if (currentCharIsLoop) {
-        inLoopX = false;
-      }
-    }
-
-    chars.push(inLoopX ? "I" : char);
-
-    if (enteringLoopX) {
-      inLoopX = true;
-    }
-    if (isLoop(char) && !connectsWest(char)) {
-      previousSegments++;
-    }
-    segmentsToEast.push(isLoop(char) ? NaN : previousSegments);
-    lastXWasLoop = isLoop(char);
-  }
-  allCharsEast.push(chars.reverse());
-  allSegmentsEast.push(segmentsToEast.reverse());
-}
-
-// allCharsX.forEach((chars) => console.log(chars.join("")));
-
-const allCharsY: string[][] = [];
-const allSegmentsY: number[][] = [];
-for (var x = 0; x <= xMax; x++) {
-  var lastXWasLoop = false;
-  var inLoopX = false;
-  const chars: string[] = [];
-  const segmentsToWest: number[] = [];
-  var previousSegments = 0;
-
-  for (var y = 0; y <= yMax; y++) {
-    const key = toKey(x, y);
-    const char = grid[key];
-    var enteringLoopX = false;
-    const currentCharIsLoop = isLoop(char);
-
-    if (!inLoopX) {
-      if (currentCharIsLoop) {
-        enteringLoopX = true;
-      }
-    } else {
-      if (currentCharIsLoop) {
-        inLoopX = false;
-      }
-    }
-
-    chars.push(inLoopX ? "I" : char);
-
-    if (enteringLoopX) {
-      inLoopX = true;
-    }
-    if (isLoop(char) && !connectsSouth(char)) {
-      previousSegments++;
-    }
-    segmentsToWest.push(isLoop(char) ? NaN : previousSegments);
-    lastXWasLoop = isLoop(char);
-  }
-  allCharsY.push(chars);
-  allSegmentsY.push(segmentsToWest);
-}
-const mapped = allSegmentsY[0].map((_, colIndex) =>
-  allSegmentsY.map((row) => row[colIndex])
-);
-
-const allCharsSouth: string[][] = [];
-const allSegmentsSouth: number[][] = [];
-for (var x = 0; x <= xMax; x++) {
-  var lastXWasLoop = false;
-  var inLoopX = false;
-  const chars: string[] = [];
-  const segmentsToWest: number[] = [];
-  var previousSegments = 0;
-
-  for (var y = yMax; y >= 0; y--) {
-    const key = toKey(x, y);
-    const char = grid[key];
-    var enteringLoopX = false;
-    const currentCharIsLoop = isLoop(char);
-
-    if (!inLoopX) {
-      if (currentCharIsLoop) {
-        enteringLoopX = true;
-      }
-    } else {
-      if (currentCharIsLoop) {
-        inLoopX = false;
-      }
-    }
-
-    chars.push(inLoopX ? "I" : char);
-
-    if (enteringLoopX) {
-      inLoopX = true;
-    }
-    if (isLoop(char) && !connectsSouth(char)) {
-      previousSegments++;
-    }
-    segmentsToWest.push(isLoop(char) ? NaN : previousSegments);
-    lastXWasLoop = isLoop(char);
-  }
-  allCharsSouth.push(chars.reverse());
-  allSegmentsSouth.push(segmentsToWest.reverse());
-}
-const mappedSouth = allSegmentsSouth[0].map((_, colIndex) =>
-  allSegmentsSouth.map((row) => row[colIndex])
-);
-
-const output: number[][] = [];
-for (var y = 0; y <= yMax; y++) {
-  output.push([]);
   for (var x = 0; x <= xMax; x++) {
-    const w = allSegmentsX[y][x];
-    const n = mapped[y][x];
-    const e = allSegmentsEast[y][x];
-    const s = mappedSouth[y][x];
-
-    var char = 0;
-    if (w == 0 || n == 0 || e == 0 || s == 0) {
-      setTo0(x, y);
-      char = 0;
-    } else if (isEven(w) && isEven(e)) {
-      setTo0(x, y);
-      char = 0;
-    } else if (isEven(n) && isEven(s)) {
-      setTo0(x, y);
-      char = 0;
-    } else {
-      char = 1;
-    }
-    //  else if (a % 2 == 0 && b % 2 == 0 && c % 2 == 0 && d % 2 == 0) {
-    //   allSegmentsX[y][x] = 0;
-    //   mapped[y][x] = 0;
-    //   allSegmentsEast[y][x] = 0;
-    //   mappedSouth[y][x] = 0;
-
-    //   char = 0;
-    // }
-    output[y].push(char);
+    const key = toKey(toBigCood(x), toBigCood(y));
+    actualChars.push(bigGridKey[key] || " ");
   }
 }
 
-function isEven(x: number) {
-  return x % 2 == 0;
-}
+const answer = actualChars.filter(
+  (char) => char != "," && char != "#" && char != "S" && char != " "
+).length;
 
-function setTo0(x: number, y: number) {
-  allSegmentsX[y][x] = 0;
-  mapped[y][x] = 0;
-  allSegmentsEast[y][x] = 0;
-  mappedSouth[y][x] = 0;
-}
-
-function print(num: number): string {
-  if (isNaN(num)) {
-    return ".";
-  } else {
-    return num.toString();
-  }
-}
-
-allSegmentsX.forEach((chars) => console.log(chars.map(print).join("")));
-console.log("");
-mapped.forEach((chars) => console.log(chars.map(print).join("")));
-console.log("");
-allSegmentsEast.forEach((chars) => console.log(chars.map(print).join("")));
-console.log("");
-mappedSouth.forEach((chars) => console.log(chars.map(print).join("")));
-
-const oooo = mappedSouth
-  .flatMap((line) => line)
-  .filter((x) => !isNaN(x) && x > 0);
-console.log(oooo.length);
-
-// for (var x = 0; x <= xMax; x++) {
-//   var lastXWasLoop = false;
-//   var inLoopX = false;
-//   const chars: string[] = [];
-
-//   for (var y = 0; y <= yMax; y++) {
-//     const key = toKey(x, y);
-//     const char = grid[key];
-//     // const charNext = grid[toKey(x + 1, y)];
-//     var enteringLoopX = false;
-//     const currentCharIsLoop = isLoop(char);
-
-//     if (!inLoopX) {
-//       if (currentCharIsLoop) {
-//         enteringLoopX = true;
-//       }
-//     } else {
-//       if (currentCharIsLoop) {
-//         inLoopX = false;
-//       }
-//     }
-
-//     chars.push(inLoopX ? "I" : char);
-
-//     if (inLoopX && cellsInsidebyX[key]) {
-//       cellsInsidebyY.push(key);
-//     }
-
-//     if (enteringLoopX) {
-//       inLoopX = true;
-//     }
-//     lastXWasLoop = isLoop(char);
-//   }
-//   allCharsY.push(chars);
-// }
-
-// console.log(cellsInsidebyY.length);
+console.log(answer);
 
 logTime("Part 2");
 
 export {};
-function isLoop(char: string) {
-  return char != ".";
-}
 
 function getConnectedCells(currentCell: number[] | [number, number]) {
   const [y, x] = currentCell;

@@ -24,3 +24,27 @@ export function getNSEW(x: number, y: number) {
 export function toKey(x: any, y: any) {
   return `${x}|${y}`;
 }
+
+export function make2DGrid<T>(xMax: number, yMax: number, fill: T) {
+  const grid: Record<string, T> = {};
+  for (var yy = -1; yy <= yMax; yy++) {
+    for (var xx = -1; xx <= xMax; xx++) {
+      grid[toKey(xx, yy)] = fill;
+    }
+  }
+  return grid;
+}
+
+export function printGrid(
+  grid: Record<string, string>,
+  xMax: number,
+  yMax: number
+) {
+  for (var y = 0; y <= yMax; y++) {
+    const line: string[] = [];
+    for (var x = 0; x <= xMax; x++) {
+      line.push(grid[toKey(x, y)] || " ");
+    }
+    console.log(line.join(""));
+  }
+}

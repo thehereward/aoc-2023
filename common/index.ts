@@ -24,3 +24,4 @@ export function getTimeLogger(): (logMessage?: string) => void {
   };
 }
 export const sum = (a: number, c: number): number => a + c;
+export const max = (a: number, c: number): number => (a < c ? c : a);
