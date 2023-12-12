@@ -5,16 +5,18 @@ import { get0To } from "../common/range";
 
 const logTime = getTimeLogger();
 
-const repetitions = 1;
+const repetitions = 5;
 
 var data = readFile("input");
 var lines = data.map((line) => line.split(" "));
 var records = lines.map((line) => {
   const c = new Array(repetitions);
   const b = c.fill(line[1]).join(",");
+  const d = new Array(repetitions);
+  const e = d.fill(line[0]).join("?")
 
   return {
-    record: line[0].repeat(repetitions),
+    record: e,
     records: [""],
     check: b.split(",").map((char) => parseInt(char)),
     count: 0,
@@ -22,184 +24,129 @@ var records = lines.map((line) => {
 });
 logTime("Records made");
 
-// const numberRecords = records.length;
-// records.forEach((record, i) => {
-//   //   logTime(`Of ${numberRecords} processing ${i}`);
-//   var accumulator: string[] = [""];
-//   record.record.split("").forEach((char) => {
-//     accumulator = accumulator.flatMap((line) => {
-//       if (char == "?") {
-//         return [line + ".", line + "#"];
-//       } else {
-//         return [line + char];
-//       }
-//     });
-//   });
-//   record.records = accumulator;
-// });
-
 const toProcess = records
   .map((r) => {
     return { check: r.check, record: r.record };
   })
-  .filter((x, i) => i == 2);
+  // .filter((x, i) => i == 5);
 
+
+// console.log(toProcess)
+// console.log("")
 var record = toProcess.shift();
 
 var count = 0;
+var iterations = 0
 while (!!record) {
+  if (iterations % 1000000 == 0){
+    logTime(`Got to ${iterations}`)
+  }
   const validNewStrings: any[] = processRecord(record);
 
-  console.log(validNewStrings);
-  record = validNewStrings.shift();
+  toProcess.unshift(...validNewStrings)
+  // console.log(toProcess);
+  // console.log({ count })
+  record = toProcess.shift()
+  // console.log("")
+  iterations++
 }
-//   //   var match1: RegExpMatchArray | null = null
-//   //   do{
-//   //   r.match(blockRegex)
-//   // } while (match1 != null)
-//   const newRegex = new RegExp(
-//     `(?<=[^#]|^)[#?]{${biggestBlock}}(?=[^#]|$)`,
-//     "g"
-//   );
-//   // console.log(r);
-//   //   const removeBefore = r.slice(beforeLength + 1);
-//   // console.log(removeBefore);
-//   //   const removeAfter = removeBefore.slice(0, removeBefore.length - afterLength);
-//   // console.log(removeAfter);
-//   const matches = r.matchAll(newRegex);
-//   var localCount = 0;
-//   for (const match of matches) {
-//     console.log(match);
-//     const index = match.index || 0;
-//     const newStrings = [
-//       { record: r.slice(0, index), check: blocksBefore },
-//       { record: r.slice(index + biggestBlock), check: blocksAfter },
-//     ].filter((s) => s.check.length);
-//     // && s.record.split("").filter((c) => c != ".").length
-//     if (newStrings.length == 0) {
-//       count++;
-//     }
-//     console.log({ localCount, count });
-//     console.log(newStrings);
-//     const toAdd = newStrings.filter(
-//       (s) => s.record.split("").filter((c) => c != ".").length
-//     );
-//     toProcess.unshift(...toAdd);
-//     console.log("");
-//   }
-//   record = toProcess.shift();
-// }
 
+// console.log(655360 - 506250)
+// ??????????
+// ?????????
 console.log({ count });
-const inside = "\\.+";
-records.forEach((record) => {
-  const checks = record.check.map((char) => `#{${char}}`);
-  const inner = checks.join(inside);
-  const regex = `^\\.*${inner}\\.*$`;
-  var count = 0;
-  //   console.log(regex);
-  record.records.forEach((r) => {
-    const result = r.match(regex);
-    if (!!result) {
-      count++;
-    }
-  });
-  //   console.log(count);
-  record.count = count;
-});
-
-// const part1 = records.map((record) => record.count).reduce(sum);
-// console.log(part1);
 
 const regex = /^\.*#{1}\.+#{1}\.+#{3}\.*$/;
-// records.forEach((r) => console.log(r.count));
-// const t = records[1].records;
-// t.forEach((tt) => console.log(tt));
-// console.log(records);
-// const progress: string[][] = [[""]];
-
-// test2.forEach((h) => {
-
-//   if (h.length == 2) {
-//     return [
-
-//     ]
-//   }
-//   h.forEach((char) => {
-//     progress.forEach((line) => {
-//       line.push(char);
-//     });
-//   });
-// });
-// console.log(progress);
-
-// records.forEach(record => {
-//     record.records = record.records.flatMap(record=> {
-//         const newRecords: string[][] = []
-//         record.split("").forEach(char => {
-
-//         })
-//     })
-// })
-
-// console.log(records);
 
 logTime("Part 1");
 
 logTime("Part 2");
 
-export {};
+export { };
 function processRecord(record: { record: string; check: number[] }) {
-  console.log("");
-  console.log({ record });
-  const blocks = record.check;
-  const r = record.record;
+  // console.log("");
+  // console.log({ record });
+  const blocks = record.check.map(c => c)
+  var r = record.record;
 
-  const biggestBlock = blocks.reduce(max, 0);
-  const location = blocks.findIndex((c) => c == biggestBlock);
-  //   console.log({ maxCheck, location });
-  const blocksBefore = blocks.slice(0, location);
-  //   console.log({ checksBefore });
-  //   const beforeLength = blocksBefore.reduce(sum, 0) + location;
-  const blocksAfter = blocks.slice(location + 1);
-  //   console.log({ checksAfter });
-  //   const afterLength = blocksAfter.reduce(sum, 0) + blocks.length - location - 1;
-  //   console.log({ beforeLength, afterLength });
-  const blockRegex = new RegExp(`(?<![#])[#?]{${biggestBlock}}(?![#])`);
-  console.log({ biggestBlock });
-
-  var stringUnderTest = record.record;
-  const validNewStrings: any[] = [];
-  while (stringUnderTest.length > 0) {
-    const match2 = stringUnderTest.match(blockRegex);
-    // console.log(match2);
-    if (match2 == null) {
-      break;
-    }
-    const index = match2.index;
-
-    if (index == undefined) {
-      break;
-    }
-
-    const newStrings = [
-      { record: r.slice(0, index), check: blocksBefore },
-      { record: r.slice(index + biggestBlock), check: blocksAfter },
-    ];
-
-    if (newStrings.filter((t) => isFinished(t)).length == 2) {
-      count++;
-    } else {
-      const validStrings = newStrings.filter((t) => !isInvalid(t));
-      validNewStrings.push(...validStrings);
-    }
-    // console.log(validStrings.length);
-    stringUnderTest = stringUnderTest.slice(index + 1);
-    // console.log(stringUnderTest);
-    // console.log("");
-    // break;
+  if (noHashRemaining(r) && blocks.length == 0) {
+    // finished
+    count++
+    return []
   }
-  return validNewStrings;
+
+  if (noHashRemaining(r) && noQuestionRemaining(r) && blocks.length != 0) {
+    // error
+    return []
+  }
+
+  if (blocks.length == 0) {
+    return []
+  }
+
+  const block = blocks.shift()
+  if (block == undefined) {
+    // should not happen
+    return []
+  }
+  const regexToUse = new RegExp(`[\#\?]{${block}}(?![\#])`);
+  var match44 = r.match(regexToUse)
+  // console.log({match44})
+  if (!match44) {
+    return []
+  }
+  const { index } = match44
+  if (index == undefined) {
+    // should never happen
+    return []
+  }
+
+  const before = r.slice(0, index)
+  if (!noHashRemaining(before)){
+    return []
+  }
+
+  const newRecords: { record: string; check: number[] }[] = []
+  if (match44[0][0] != '#') {
+    newRecords.push({
+      check: [block, ...blocks],
+      record: r.slice(index + 1)
+    })
+  }
+  newRecords.push({
+    check: blocks,
+    record: r.slice(index + block + 1)
+  })
+  return newRecords
+
+
+  // console.log({ match44, blocks })
+  // if (index != undefined) {
+  //   const nextChar = r[index + block]
+  //   // console.log({ match44, blocks, nextChar })
+  //   if (nextChar != '#') {
+  //     const after = r.slice(index + block + 1)
+  //     newRecords.push(
+  //       {
+  //         check: blocks,
+  //         record: after
+  //       }
+  //     )
+
+  //     r = r.slice(index + 1)
+  //   } else {
+  //     r = r.slice(1)
+  //   }
+  // }
+  // return newRecords
+}
+
+function noHashRemaining(r: string) {
+  return r.indexOf("#") == -1;
+}
+
+function noQuestionRemaining(r: string) {
+  return r.indexOf("?") == -1;
 }
 
 function isInvalid(t: { record: string; check: number[] }) {
