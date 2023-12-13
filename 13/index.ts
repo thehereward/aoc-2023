@@ -21,9 +21,52 @@ data.forEach((line) => {
 
 // console.log(patterns);
 
+const matchesFromTop = patterns.filter((pattern) =>
+  doesItMatchFromTop(pattern)
+);
+
+patterns.forEach((p) => p.reverse());
+
+const matchesFromBottom = patterns.filter((pattern) =>
+  doesItMatchFromTop(pattern)
+);
+
+console.log({ matchesFromTop });
+
 // check for horizontal symmetry
-const rowNumbers = getHorzontalMatches(patterns);
+// const rowNumbers = getHorzontalMatches(patterns);
 logTime("Row numbers retrieved");
+
+function doesItMatchFromTop(pattern: string[]): boolean {
+  console.log(pattern);
+  const [lineToMatch, ...rest] = pattern;
+  console.log(lineToMatch);
+
+  const matchingIndexes = rest
+    .map((line, i) => {
+      return {
+        isMatch: lineToMatch == line,
+        index: i,
+      };
+    })
+    .filter((o) => o.isMatch)
+    .map((p) => p.index);
+
+  console.log(matchingIndexes);
+
+  if (matchingIndexes.length == 0) {
+    // no matches from this side
+    return false;
+  }
+
+  matchingIndexes.forEach((index) => {
+    if (doesItMatchFromTop(rest.slice(0, index))) {
+      return true;
+    }
+  });
+  return false;
+}
+
 // console.log(rowNumbers);
 
 function getHorzontalMatches(patterns: string[][]) {
@@ -140,26 +183,18 @@ function transpose<T>(array: T[][]): T[][] {
   return array[0].map((_, colIndex) => array.map((row) => row[colIndex]));
 }
 
-// function transpose<T>(a: T[][]) {
-//   return a[0].map(function (c) {
-//     return a.map(function (r) {
-//       return c;
-//     });
-//   });
-// }
-
 const s = patterns
   .map((pattern) => pattern.map((line) => line.split("")))
   .map((p) => transpose(p))
   .map((l) => l.map((ll) => ll.join("")));
 
-const colNumbers = getHorzontalMatches(s);
-logTime("Col numbers retrieved");
+// const colNumbers = getHorzontalMatches(s);
+// logTime("Col numbers retrieved");
 
-const rowSum = rowNumbers.reduce(sum, 0);
-const colSum = colNumbers.reduce(sum, 0);
+// const rowSum = rowNumbers.reduce(sum, 0);
+// const colSum = colNumbers.reduce(sum, 0);
 
-console.log(rowSum * 100 + colSum);
+// console.log(rowSum * 100 + colSum);
 
 // 42068 is not correct
 // 25883 is not correct
