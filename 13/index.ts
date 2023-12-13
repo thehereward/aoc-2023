@@ -19,28 +19,135 @@ data.forEach((line) => {
   }
 });
 
-// console.log(patterns);
+const horizontals: string[][] = JSON.parse(JSON.stringify(patterns));
+var verticals: string[][] = JSON.parse(JSON.stringify(patterns));
+verticals = verticals
+  .map((pattern) => pattern.map((line) => line.split("")))
+  .map((p) => transpose(p))
+  .map((l) => l.map((ll) => ll.join("")));
 
-const matchesFromTop = patterns.filter((pattern) =>
-  doesItMatchFromTop(pattern)
-);
+// Horizontal Matches
+logTime("Processing from top");
+const matchesFromTop = horizontals
+  .map((pattern) => getMatchCandidates(pattern))
+  .map((candidates) => candidates.map((candidate) => isMatch(candidate, 1)))
+  .map((candidates) => candidates.filter((candidate) => candidate.matches));
 
-patterns.forEach((p) => p.reverse());
+horizontals.forEach((p) => p.reverse());
 
-const matchesFromBottom = patterns.filter((pattern) =>
-  doesItMatchFromTop(pattern)
-);
+logTime("Processing from bottom");
+var matchesFromBottom = horizontals
+  .map((pattern) => getMatchCandidates(pattern))
+  .map((candidates) => candidates.map((candidate) => isMatch(candidate, 1)))
+  .map((candidates) => candidates.filter((candidate) => candidate.matches));
 
-console.log({ matchesFromTop });
+const hLengths = horizontals.map((h) => h.length);
 
-// check for horizontal symmetry
-// const rowNumbers = getHorzontalMatches(patterns);
-logTime("Row numbers retrieved");
+matchesFromBottom = matchesFromBottom.map((match, i) => {
+  if (match.length == 0) {
+    return [];
+  }
+  if (match.length > 1) {
+    // console.log(match);
+    console.log("there were multiple reflection points - from bottom");
+  }
+  //   console.log(match);
+  const m = match[0];
+  return [
+    {
+      matches: m.matches,
+      rowsAbove: hLengths[i] - m.rowsAbove,
+    },
+  ];
+});
 
-function doesItMatchFromTop(pattern: string[]): boolean {
-  console.log(pattern);
+// console.log(matchesFromBottom);
+
+// Vertical Matches
+logTime("Processing from left");
+const matchesFromLeft = verticals
+  .map((pattern) => getMatchCandidates(pattern))
+  .map((candidates) => candidates.map((candidate) => isMatch(candidate, 1)))
+  .map((candidates) => candidates.filter((candidate) => candidate.matches));
+
+verticals.forEach((p) => p.reverse());
+
+logTime("Processing from right");
+var matchesFromRight = verticals
+  .map((pattern) => getMatchCandidates(pattern))
+  .map((candidates) => candidates.map((candidate) => isMatch(candidate, 1)))
+  .map((candidates) => candidates.filter((candidate) => candidate.matches));
+
+const vLengths = verticals.map((v) => v.length);
+
+matchesFromRight = matchesFromRight.map((match, i) => {
+  if (match.length == 0) {
+    return [];
+  }
+  if (match.length > 1) {
+    // console.log(match);
+    console.log("there were multiple reflection points - from right");
+  }
+  const m = match[0];
+  return [
+    {
+      matches: m.matches,
+      rowsAbove: vLengths[i] - m.rowsAbove,
+    },
+  ];
+});
+
+// console.log(matchesFromRight);
+
+const hMatches = [matchesFromBottom, matchesFromTop].flat().flat();
+
+const vMatches = [matchesFromLeft, matchesFromRight].flat().flat();
+
+patterns.forEach((_, i) => {
+  const match = [
+    matchesFromTop[i],
+    matchesFromBottom[i],
+    matchesFromLeft[i],
+    matchesFromRight[i],
+  ].flat();
+  if (match.length != 1) {
+    ("error");
+  }
+});
+// console.log(hMatches);
+// console.log(vMatches);
+
+const hSum = hMatches.map((h) => h.rowsAbove).reduce(sum, 0);
+const vSum = vMatches.map((v) => v.rowsAbove).reduce(sum, 0);
+
+console.log(hSum * 100 + vSum);
+
+// console.log(matchesFromBottom);
+// console.log(matchesFromLeft);
+// console.log(matchesFromRight);
+
+function isMatch(pattern: string[], rowsAbove: number) {
+  if (pattern.length == 0) {
+    return { matches: true, rowsAbove };
+  }
+  if (pattern.length == 1) {
+    console.log("there was a reflection in the middle of a line");
+    console.log(pattern);
+    return { matches: true, rowsAbove };
+  }
+  const [first, ...tail] = pattern;
+  const [last, ...rest] = tail.reverse();
+  if (first != last) {
+    return { matches: false, rowsAbove: NaN };
+  } else {
+    return isMatch(rest, rowsAbove + 1);
+  }
+}
+
+function getMatchCandidates(pattern: string[]) {
+  //   console.log(pattern);
   const [lineToMatch, ...rest] = pattern;
-  console.log(lineToMatch);
+  //   console.log(lineToMatch);
 
   const matchingIndexes = rest
     .map((line, i) => {
@@ -52,155 +159,22 @@ function doesItMatchFromTop(pattern: string[]): boolean {
     .filter((o) => o.isMatch)
     .map((p) => p.index);
 
-  console.log(matchingIndexes);
+  //   console.log(matchingIndexes);
 
-  if (matchingIndexes.length == 0) {
-    // no matches from this side
-    return false;
-  }
-
-  matchingIndexes.forEach((index) => {
-    if (doesItMatchFromTop(rest.slice(0, index))) {
-      return true;
-    }
+  return matchingIndexes.map((index) => {
+    return rest.slice(0, index);
   });
-  return false;
 }
-
-// console.log(rowNumbers);
-
-function getHorzontalMatches(patterns: string[][]) {
-  const horizontalMatches: number[][][] = [];
-  patterns.forEach((pattern) => {
-    const matches: number[][] = [];
-    //   const stopAt = pattern.length / 2;
-    pattern.forEach((linea, i) => {
-      pattern.forEach((lineb, j) => {
-        if (linea == lineb && i != j) {
-          matches.push([i, j]);
-        }
-      });
-    });
-    //   horizontalMatches.push(matches.slice(0, matches.length / 2));
-    horizontalMatches.push(matches);
-  });
-
-  const rowNumbers: number[] = [];
-
-  // console.log(patterns);
-
-  patterns.forEach((pattern, i) => {
-    // console.log(i);
-    const hMatches = horizontalMatches[i];
-    const { matches, row } = isAMatch(hMatches, pattern);
-    // console.log({ isMatch });
-    // console.log(hMatches);
-
-    // if (!isMatch) {
-    //   console.log(hMatches);
-    // }
-    // Might need to add more to this for the real input
-    if (matches) {
-      rowNumbers.push(row);
-    }
-  });
-  return rowNumbers;
-}
-
-function isAMatch(hMatches: number[][], pattern: string[]) {
-  const logging = false;
-  var row = Infinity;
-  if (hMatches.length == 0) {
-    return { matches: false, row };
-  }
-
-  const sMatches = new Set(hMatches.map((m) => toKey(m[0], m[1])));
-
-  // match from top
-  const topMatches = hMatches.filter((m) => m[0] == 0);
-  if (logging) {
-    console.log({ hMatches, topMatches });
-  }
-  var matchFromTop = false;
-  topMatches.forEach((match) => {
-    var t = match[0];
-    var b = match[1];
-    var isMatch = true;
-    while (t < b) {
-      if (logging) {
-        console.log({ t, b });
-      }
-      if (!sMatches.has(toKey(b, t))) {
-        if (logging) {
-          console.log(`not a match, could not find ${b}|${t}`);
-        }
-        isMatch = false;
-        return;
-      }
-      t++;
-      b--;
-    }
-    if (isMatch) {
-      if (logging) {
-        console.log("this is a match");
-      }
-      row = t;
-      matchFromTop = true;
-    }
-  });
-
-  if (matchFromTop) {
-    return { matches: true, row };
-  }
-
-  // match from bottom
-  const buttomMatches = hMatches.filter((m) => m[0] == pattern.length - 1);
-  //   console.log({ hMatches, buttomMatches });
-  var matchFromBottom = false;
-  buttomMatches.forEach((match) => {
-    var t = match[0];
-    var b = match[1];
-    var isMatch = true;
-    while (t > b) {
-      //   console.log({ t, b });
-      if (!sMatches.has(toKey(b, t))) {
-        isMatch = false;
-        return;
-      }
-      t--;
-      b++;
-    }
-    if (isMatch) {
-      row = b;
-      matchFromBottom = true;
-    }
-  });
-
-  return { matches: matchFromBottom, row };
-}
-
 function transpose<T>(array: T[][]): T[][] {
   return array[0].map((_, colIndex) => array.map((row) => row[colIndex]));
 }
-
-const s = patterns
-  .map((pattern) => pattern.map((line) => line.split("")))
-  .map((p) => transpose(p))
-  .map((l) => l.map((ll) => ll.join("")));
-
-// const colNumbers = getHorzontalMatches(s);
-// logTime("Col numbers retrieved");
-
-// const rowSum = rowNumbers.reduce(sum, 0);
-// const colSum = colNumbers.reduce(sum, 0);
-
-// console.log(rowSum * 100 + colSum);
 
 // 42068 is not correct
 // 25883 is not correct
 // 18499 is not correct
 // 35118 is not correct
 // 35098 is not correct
+// 35099 is not correct
 
 logTime("Part 1");
 
