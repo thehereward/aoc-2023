@@ -23,7 +23,7 @@ const maps = patterns.map((pattern1) => {
   const pattern = pattern1.map((line) => line.split(""));
   const width = pattern[0].length;
   for (var col = 1; col < width; col++) {
-    var isMatch = true;
+    var mismatchCount = 0;
     for (var offset = 1; offset <= width - col && offset <= col; offset++) {
       const colR = col + offset - 1;
       const colL = col - offset;
@@ -35,22 +35,24 @@ const maps = patterns.map((pattern1) => {
         // console.log(row, colL, colR, left, right);
         if (mismatch) {
           //   console.log("");
-          isMatch = false;
+          mismatchCount++;
+        }
+        if (mismatchCount > 1) {
           break;
         }
       }
-      if (!isMatch) {
+      if (mismatchCount > 1) {
         break;
       }
     }
-    if (isMatch) {
+    if (mismatchCount == 1) {
       return col;
     }
   }
 
   const height = pattern.length;
   for (var row = 1; row < height; row++) {
-    var isMatch = true;
+    var mismatchCount = 0;
     for (var offset = 1; offset <= height - row && offset <= row; offset++) {
       const rowB = row + offset - 1;
       const rowT = row - offset;
@@ -62,15 +64,18 @@ const maps = patterns.map((pattern1) => {
         // console.log(row, colL, colR, left, right);
         if (mismatch) {
           //   console.log("");
-          isMatch = false;
+          mismatchCount++;
+        }
+
+        if (mismatchCount > 1) {
           break;
         }
       }
-      if (!isMatch) {
+      if (mismatchCount > 1) {
         break;
       }
     }
-    if (isMatch) {
+    if (mismatchCount == 1) {
       return row * 100;
     }
   }
