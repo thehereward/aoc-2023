@@ -18,11 +18,6 @@ lines.forEach((line, y) => {
 
 const yMax = lines.length;
 const xMax = lines[0].length;
-// console.log(yMax, xMax);
-
-// printlines(lines);
-
-// console.log("");
 
 function tiltNorth() {
   for (var y = 0; y < yMax; y++) {
@@ -105,9 +100,7 @@ const state0 = getState();
 tiltNorth();
 
 const part1 = getLoad(lines);
-console.log(part1);
-
-// console.log({ everything });
+console.log({ part1 });
 
 logTime("Part 1");
 
@@ -131,15 +124,16 @@ function getState() {
 const stateMap = new Map<string, string>();
 
 const state1 = getState();
-// console.log(state0);
-// console.log(state1);
 stateMap.set(state0, state1);
+const stateArray = [state0, state1];
 
 var lastState = state1;
+var index = -1;
 for (count = 1; count < 1000000000; count++) {
   if (lastState == "") {
     throw new Error();
   }
+
   if (!stateMap.has(lastState)) {
     tiltNorth();
     tiltWest();
@@ -147,6 +141,13 @@ for (count = 1; count < 1000000000; count++) {
     tiltEast();
     const newState = getState();
     stateMap.set(lastState, newState);
+    index = stateArray.findIndex((s) => s == newState);
+    if (index != -1) {
+      //   console.log("found the repeat");
+      //   console.log(newState);
+      break;
+    }
+    stateArray.push(newState);
   }
   lastState = stateMap.get(lastState) || "";
   if (count % 10000000 == 0) {
@@ -154,21 +155,36 @@ for (count = 1; count < 1000000000; count++) {
   }
 }
 
+var toGo = 1000000000;
+
+// Remove that which came before
+toGo = toGo - index;
+
+// Skip a lot of cycles
+const cycle = stateArray.length - index;
+toGo = toGo % cycle;
+
+// console.log({ toGo });
+const finalIndex = toGo + index;
+
+const finalState = stateArray[finalIndex];
+// console.log(stateArray.length);
+// console.log({ count, index });
+
 const reg = new RegExp(`.{${xMax}}`, "g");
 // console.log({ reg });
-const matches = lastState.match(reg);
+const matches = finalState.match(reg);
 
 if (!matches) {
   throw Error();
 }
 
 const newLines = matches?.map((line) => line.split(""));
-console.log(lastState);
-console.log("");
-printlines(newLines);
+// console.log(lastState);
+// console.log("");
+// printlines(newLines);
 
 const part2 = getLoad(newLines);
-logTime(`After cycles: ${count}`);
 
 console.log({ part2 });
 
