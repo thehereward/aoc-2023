@@ -149,7 +149,7 @@ for (count = 1; count < 1000000000; count++) {
     stateMap.set(lastState, newState);
   }
   lastState = stateMap.get(lastState) || "";
-  if (count % 1000000 == 0) {
+  if (count % 10000000 == 0) {
     logTime(`Complete cycles: ${count}`);
   }
 }
