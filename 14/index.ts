@@ -100,12 +100,11 @@ function tiltEast() {
   }
 }
 
+const state0 = getState();
+
 tiltNorth();
 
-const part1 = lines
-  .map((line) => line.filter((char) => char == "O").length)
-  .map((sum, i) => sum * (yMax - i))
-  .reduce(sum);
+const part1 = getLoad(lines);
 console.log(part1);
 
 // console.log({ everything });
@@ -118,22 +117,60 @@ tiltEast();
 
 var count = 1;
 
-function getState() {
-  const state = lines.map((line) => line.join("")).join("");
+function getLoad(lines: string[][]) {
+  return lines
+    .map((line) => line.filter((char) => char == "O").length)
+    .map((sum, i) => sum * (yMax - i))
+    .reduce(sum);
 }
 
+function getState() {
+  return lines.map((line) => line.join("")).join("");
+}
+
+const stateMap = new Map<string, string>();
+
+const state1 = getState();
+// console.log(state0);
+// console.log(state1);
+stateMap.set(state0, state1);
+
+var lastState = state1;
 for (count = 1; count < 1000000000; count++) {
-  tiltNorth();
-  tiltWest();
-  tiltSouth();
-  tiltEast();
+  if (lastState == "") {
+    throw new Error();
+  }
+  if (!stateMap.has(lastState)) {
+    tiltNorth();
+    tiltWest();
+    tiltSouth();
+    tiltEast();
+    const newState = getState();
+    stateMap.set(lastState, newState);
+  }
+  lastState = stateMap.get(lastState) || "";
   if (count % 1000000 == 0) {
-    logTime(`Completed cycles: ${count}`);
+    logTime(`Complete cycles: ${count}`);
   }
 }
 
+const reg = new RegExp(`.{${xMax}}`, "g");
+// console.log({ reg });
+const matches = lastState.match(reg);
+
+if (!matches) {
+  throw Error();
+}
+
+const newLines = matches?.map((line) => line.split(""));
+console.log(lastState);
+console.log("");
+printlines(newLines);
+
+const part2 = getLoad(newLines);
 logTime(`After cycles: ${count}`);
-printlines(lines);
+
+console.log({ part2 });
 
 logTime("Part 2");
 
