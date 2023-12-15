@@ -27,3 +27,7 @@ export const sum = (a: number, c: number): number => a + c;
 export const max = (a: number, c: number): number => (a < c ? c : a);
 export const printlines = (lines: string[][]) =>
   lines.forEach((line) => console.log(line.join("")));
+export function assertDefined<T>(char: T | undefined): T {
+  if (char == undefined) throw new Error();
+  return char;
+}
