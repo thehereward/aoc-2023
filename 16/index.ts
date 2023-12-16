@@ -7,79 +7,68 @@ const logTime = getTimeLogger();
 
 var data = readFile("input");
 const grid = data.map((line) => line.split(""));
-// console.log({ grid });
 
 const xMax = grid[0].length;
 const yMax = grid.length;
 
 const start = [0, 0, 0];
-var beamHeads = [start];
 
-const visitedSet = new Set<string>();
-const uniqueTiles = new Set<string>();
+const part1 = fireBeam(start, newGrid());
 
-// for (var j = 0; j < yMax; j++) {
-//   const line: string[] = [];
-//   for (var i = 0; i < xMax; i++) {
-//     const char = uniqueTiles.has(toKey(i, j)) ? "#" : grid[j][i];
-//     line.push(char);
-//   }
-//   console.log(line.join(""));
-// }
-// console.log("");
+console.log({ part1 });
 
-while (beamHeads.length > 0) {
-  const [beamHead, ...rest] = beamHeads;
-  if (visitedSet.has(beamHead.toString())) {
-    // We've seen this before, we can skip it
-    beamHeads = rest;
-    continue;
-  }
-
-  const [x, y, direction] = beamHead;
-  if (x < 0 || y < 0 || x >= xMax || y >= yMax) {
-    // out of bounds, beam is lost
-    beamHeads = rest;
-    continue;
-  }
-
-  visitedSet.add(beamHead.toString());
-  uniqueTiles.add(toKey(x, y));
-
-  const tile = grid[y][x];
-
-  switch (tile) {
-    case ".":
-      // Continue
-      rest.push(advance(x, y, direction));
-      break;
-    case "/":
-      rest.push(reflectA(x, y, direction));
-      break;
-    case "\\":
-      rest.push(reflectB(x, y, direction));
-      break;
-    case "-":
-      rest.push(...splitHorizontal(x, y, direction));
-      break;
-    case "|":
-      rest.push(...splitVertical(x, y, direction));
-      break;
-  }
-  beamHeads = rest;
-  //   console.log(beamHeads);
+function newGrid(): string[][] {
+  return JSON.parse(JSON.stringify(grid));
 }
 
-// for (var j = 0; j < yMax; j++) {
-//   const line: string[] = [];
-//   for (var i = 0; i < xMax; i++) {
-//     const char = uniqueTiles.has(toKey(i, j)) ? "#" : grid[j][i];
-//     line.push(char);
-//   }
-//   console.log(line.join(""));
-// }
+function fireBeam(initialBeam: number[], grid: string[][]) {
+  var beamHeads = [initialBeam];
 
-console.log(uniqueTiles.size);
+  const visitedSet = new Set<string>();
+  const uniqueTiles = new Set<string>();
+
+  while (beamHeads.length > 0) {
+    const [beamHead, ...rest] = beamHeads;
+    if (visitedSet.has(beamHead.toString())) {
+      // We've seen this before, we can skip it
+      beamHeads = rest;
+      continue;
+    }
+
+    const [x, y, direction] = beamHead;
+    if (x < 0 || y < 0 || x >= xMax || y >= yMax) {
+      // out of bounds, beam is lost
+      beamHeads = rest;
+      continue;
+    }
+
+    visitedSet.add(beamHead.toString());
+    uniqueTiles.add(toKey(x, y));
+
+    const tile = grid[y][x];
+
+    switch (tile) {
+      case ".":
+        // Continue
+        rest.push(advance(x, y, direction));
+        break;
+      case "/":
+        rest.push(reflectA(x, y, direction));
+        break;
+      case "\\":
+        rest.push(reflectB(x, y, direction));
+        break;
+      case "-":
+        rest.push(...splitHorizontal(x, y, direction));
+        break;
+      case "|":
+        rest.push(...splitVertical(x, y, direction));
+        break;
+    }
+    beamHeads = rest;
+  }
+  return uniqueTiles.size;
+}
 
 function reflectA(x: number, y: number, direction: number) {
   switch (direction) {
@@ -166,6 +155,36 @@ function advance(x: number, y: number, direction: number) {
 }
 
 logTime("Part 1");
+
+const answerMap = new Map<number[], number>();
+
+// top / bottom
+for (var i = 0; i < xMax; i++) {
+  const startTop = [i, 0, 1];
+  answerMap.set(startTop, fireBeam(startTop, newGrid()));
+  const startBottom = [i, yMax - 1, 3];
+  answerMap.set(startBottom, fireBeam(startBottom, newGrid()));
+}
+
+// left / right
+for (var i = 0; i < yMax; i++) {
+  const startLeft = [0, i, 0];
+  answerMap.set(startLeft, fireBeam(startLeft, newGrid()));
+  const startRight = [xMax - 1, i, 2];
+  answerMap.set(startRight, fireBeam(startRight, newGrid()));
+}
+
+const answers: number[][] = [];
+for (const answer of answerMap.entries()) {
+  answers.push([...answer[0], answer[1]]);
+}
+
+answers.sort((a, b) => {
+  return b[3] - a[3];
+});
+
+const part2 = answers[0][3];
+console.log({ part2 });
 
 logTime("Part 2");
 
