@@ -83,8 +83,10 @@ var states: Step[] = [
   },
 ];
 
-const MAX_STEPS = 3;
+const MAX_STEPS = 10;
+const MIN_STEP = 4;
 
+var printed = false;
 function getStepsAbove(step: Step) {
   const increments = get0To(MAX_STEPS).map((i) => i + 1);
   const [y, x] = step.coords;
@@ -154,33 +156,38 @@ function getNextStates(state: Step): Step[] {
   //   console.log(costsAbove);
   //   console.log(accCostsAbove);
 
-  //   if (stepsBelow.length > 1) {
-  //     console.log(state);
-  //     console.log(stepsBelow);
-  //     console.log(costsBelow);
-  //     console.log(accCostsBelow);
+  //   //   if (stepsBelow.length > 1) {
+  //   //     console.log(state);
+  //   console.log(stepsBelow);
+  //   console.log(costsBelow);
+  //   console.log(accCostsBelow);
   //   }
   const nextDirection: Direction = state.lastDirection == ">" ? "v" : ">";
-  const newStepsAbove = stepsAbove.map((next, i) => {
-    return {
-      lastDirection: nextDirection,
-      coords: next,
-      cost: state.cost + accCostsAbove[i],
-    };
-  });
-  const newStepsBelow = stepsBelow.map((next, i) => {
-    return {
-      lastDirection: nextDirection,
-      coords: next,
-      cost: state.cost + accCostsBelow[i],
-    };
-  });
+  const newStepsAbove = stepsAbove
+    .map((next, i) => {
+      return {
+        lastDirection: nextDirection,
+        coords: next,
+        cost: state.cost + accCostsAbove[i],
+      };
+    })
+    .filter((_, i) => i >= MIN_STEP - 1);
+  const newStepsBelow = stepsBelow
+    .map((next, i) => {
+      return {
+        lastDirection: nextDirection,
+        coords: next,
+        cost: state.cost + accCostsBelow[i],
+      };
+    })
+    .filter((_, i) => i >= MIN_STEP - 1);
   return [...newStepsAbove, ...newStepsBelow];
 }
 
 var count = 0;
 const COUNT = Infinity;
 while (states.length > 0) {
+  //   console.log(states);
   const state = states.shift();
   if (!state) {
     throw new Error();
