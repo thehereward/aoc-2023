@@ -67,7 +67,7 @@ function visitNode(start: T) {
     const [y, x] = node.coords;
     if (y < 0 || x < 0 || y >= yMax || x >= xMax) return false;
 
-    if (visited.has(toKey(x, y))) return false;
+    // if (visited.has(toKey(x, y))) return false;
     // if (lastDirections.length == 1) {
     //   const lastDirection = lastDirections[0];
     //   switch (lastDirection) {
@@ -139,11 +139,17 @@ function visitNode(start: T) {
       //     }
       //   }
 
-      const isNewMin = cost != mainNode.totalCost;
-      mainNode.totalCost = Math.min(cost, mainNode.totalCost);
-      if (isNewMin) {
+      if (cost < mainNode.totalCost) {
+        if (visited.has(key)) {
+          console.log("trying to update a visited node");
+        }
+        mainNode.totalCost = cost;
         mainNode.paths = [path];
-      } else {
+      } else if (cost == mainNode.totalCost) {
+        if (visited.has(key)) {
+          console.log("trying to update a visited node");
+        }
+        mainNode.totalCost = cost;
         mainNode.paths.push(path);
       }
     }
@@ -187,22 +193,45 @@ function isValidPath(path: string) {
 }
 
 // var toVisit = [start];
+const LIMIT = Infinity;
 var count = 0;
 while (unvisited.length > 0) {
   //   console.log(toVisit);
   unvisited.sort((a, b) => a.totalCost - b.totalCost);
-  //   console.log(unvisited.filter((a) => a.totalCost != Infinity).slice(0, 10));
+  console.log(
+    unvisited
+      .filter((node) =>
+        node.paths
+          .map((path) => ">>v>>>^>>>vv>>vv>vvv>vvv<vv>".startsWith(path))
+          .reduce((a, b) => a || b, false)
+      )
+      //   .filter((a) => a.totalCost != Infinity)
+      //   .slice(0, 10)
+      .map((node) => {
+        return {
+          yx: node.coords,
+          cost: node.costToEnter,
+          tCost: node.totalCost,
+          paths: node.paths,
+        };
+      })
+  );
+  console.log("");
+  if (count > LIMIT) {
+    break;
+  }
   //   console.log(toVisit);
   const next = unvisited.shift();
   //   console.log(next);
   if (!next) {
     throw new Error();
   }
+  console.log(next);
   visitNode(next);
   count++;
 }
 
-console.log(nodeMap.get(toKey(xMax - 1, yMax - 1)));
+// console.log(nodeMap.get(toKey(xMax - 1, yMax - 1)));
 
 // lines.forEach((line, y) => {
 //   const costLine: string[] = [];
