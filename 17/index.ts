@@ -13,10 +13,31 @@ const yMax = lines.length;
 
 const costs: number[][] = [];
 
+type T = {
+  coords: number[];
+  costToEnter: number;
+  totalCost: number;
+  key: string;
+  paths: string[];
+};
+const unvisited: T[] = [];
+const allNodes: T[] = [];
+const nodeMap: Map<string, T> = new Map();
+
 lines.forEach((line, y) => {
   const costLine: number[] = [];
   line.forEach((_, x) => {
     costLine[x] = Infinity;
+    const newNode = {
+      coords: [y, x],
+      costToEnter: lines[y][x],
+      totalCost: x == 0 && y == 0 ? 0 : Infinity,
+      key: toKey(x, y),
+      paths: x == 0 && y == 0 ? [""] : [],
+    };
+    allNodes.push(newNode);
+    unvisited.push(newNode);
+    nodeMap.set(newNode.key, newNode);
   });
   costs.push(costLine);
 });
@@ -28,49 +49,53 @@ const visited: Set<string> = new Set();
 
 costs[0][0] = 0;
 
-const start = {
-  coords: [0, 0],
-  cost: 0,
-  path: "",
-};
-type Node = {
-  coords: number[];
-  path: string;
-};
-
 const cost = lines[([0, 0][0], [0, 0][1])];
-function visitNode(start: Node) {
-  const { coords, path } = start;
+
+var count = 0;
+
+function visitNode(start: T) {
+  count++;
+  const { coords, paths, totalCost } = start;
   visited.add(toKey(coords[1], coords[0]));
-  const startCost = costs[coords[0]][coords[1]];
+
   const neighbours = getNSEW(coords[1], coords[0]).map((n, i) => {
-    return { coords: n, path: DIRECTIONS[i] };
+    return { coords: n, newDirection: DIRECTIONS[i] };
   });
 
-  const lastDirection = path.slice(-1);
+  //   const lastDirections = paths.map((path) => path.slice(-1));
   const nodesInMap = neighbours.filter((node) => {
     const [y, x] = node.coords;
     if (y < 0 || x < 0 || y >= yMax || x >= xMax) return false;
 
     if (visited.has(toKey(x, y))) return false;
-
-    switch (lastDirection) {
-      case "^":
-        return node.path != "v";
-      case "v":
-        return node.path != "^";
-      case ">":
-        return node.path != "<";
-      case "<":
-        return node.path != ">";
-      default:
-        return true;
-    }
+    // if (lastDirections.length == 1) {
+    //   const lastDirection = lastDirections[0];
+    //   switch (lastDirection) {
+    //     case "^":
+    //       return node.newDirection != "v";
+    //     case "v":
+    //       return node.newDirection != "^";
+    //     case ">":
+    //       return node.newDirection != "<";
+    //     case "<":
+    //       return node.newDirection != ">";
+    //     default:
+    //       return true;
+    //   }
+    // }
+    return true;
   });
 
-  //   console.log(nodesInMap);
+  const nodesWithPaths = nodesInMap.flatMap((node) => {
+    return paths.map((path) => {
+      return {
+        coords: node.coords,
+        path: path + node.newDirection,
+      };
+    });
+  });
 
-  const costed = nodesInMap.map((node) => {
+  const costed = nodesWithPaths.map((node) => {
     const { coords } = node;
     const cost = lines[coords[0]][coords[1]];
     return {
@@ -83,22 +108,67 @@ function visitNode(start: Node) {
   const final = costed.map((node) => {
     return {
       ...node,
-      path: path + node.path,
-      cost: node.cost + startCost,
+      cost: node.cost + totalCost,
     };
   });
 
-  const valids = final.filter((node) => rejectString(node.path));
+  const valids = final.filter((node) => isValidPath(node.path));
+  //   console.log(valids);
+
+  //   console.log(start);
+  //   console.log(valids);
+
+  //   if (count > 3) {
+  //     throw new Error();
+  //   }
 
   valids.forEach((node) => {
-    const { coords, cost } = node;
-    costs[coords[0]][coords[1]] = Math.min(cost, costs[coords[0]][coords[1]]);
-  });
+    const { coords, cost, path } = node;
+    const key = toKey(coords[1], coords[0]);
+    const mainNode = nodeMap.get(key);
 
-  return valids;
+    if (!!mainNode) {
+      //   if (cost == mainNode.totalCost) {
+      //     // console.log("found multiple ways to access cell at same cost");
+      //     // console.log(coords);
+      //     // console.log(mainNode.path);
+      //     // console.log(path);
+      //     if (isRejectable(path)) {
+      //       console.log("was rejectable");
+      //       unvisited.push(mainNode);
+      //     }
+      //   }
+
+      const isNewMin = cost != mainNode.totalCost;
+      mainNode.totalCost = Math.min(cost, mainNode.totalCost);
+      if (isNewMin) {
+        mainNode.paths = [path];
+      } else {
+        mainNode.paths.push(path);
+      }
+    }
+  });
 }
 
-function rejectString(path: string) {
+function isRejectable(path: string) {
+  return !isValidPath(path);
+}
+
+function isValidPath(path: string) {
+  if (path.length < 2) {
+    return true;
+  }
+
+  const lastTwo = path.slice(-2);
+  if (
+    lastTwo == "><" ||
+    lastTwo == "><" ||
+    lastTwo == "v^" ||
+    lastTwo == "^v"
+  ) {
+    return false;
+  }
+
   if (path.length < 4) {
     return true;
   }
@@ -116,21 +186,23 @@ function rejectString(path: string) {
   }
 }
 
-var toVisit = [start];
-while (toVisit.length > 0) {
+// var toVisit = [start];
+var count = 0;
+while (unvisited.length > 0) {
   //   console.log(toVisit);
-  toVisit.sort((a, b) => a.cost - b.cost);
+  unvisited.sort((a, b) => a.totalCost - b.totalCost);
+  //   console.log(unvisited.filter((a) => a.totalCost != Infinity).slice(0, 10));
   //   console.log(toVisit);
-  const next = toVisit.shift();
+  const next = unvisited.shift();
   //   console.log(next);
   if (!next) {
     throw new Error();
   }
-  toVisit.push(...visitNode(next));
-  logTime(toVisit.length.toString());
+  visitNode(next);
+  count++;
 }
 
-console.log(costs);
+console.log(nodeMap.get(toKey(xMax - 1, yMax - 1)));
 
 // lines.forEach((line, y) => {
 //   const costLine: string[] = [];
@@ -145,3 +217,13 @@ logTime("Part 1");
 logTime("Part 2");
 
 export {};
+
+// Correct Path
+// >>v>>>^>>>vv>>vv>vvv>vvv<vv>
+// >>>v>>>v>vv>>>vvv>v>vv<vv>
+// >>>v>>>v>vv>>>vvv>v>vvv<v>
+
+// >>v>>^>>>v>>v>vv>v>vvv<v>vvv
+// >>v>>^>>v>>>v>vv>v>vvv<v>vvv
+// >>v>>^>>>v>v>>vv>v>vvv<v>vvv
+// >>v>>^>>v>>v>>vv>v>vvv<v>vvv
