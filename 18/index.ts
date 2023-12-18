@@ -1,7 +1,4 @@
-import { sum } from "../common";
 import { readFile, getTimeLogger } from "../common";
-import { toKey, get3By3 } from "../common/grid";
-import { get0To } from "../common/range";
 
 const logTime = getTimeLogger();
 
@@ -14,141 +11,29 @@ const instructions = lines.map((line) => {
     colour: line[2].slice(2, 8),
   };
 });
-// console.log({ instructions });
 
-const points = getPoints(instructions);
-
-var {
-  yMax,
-  xMax,
-  allPoints,
-}: { yMax: number; xMax: number; allPoints: Set<string> } = normalize(points);
-
-function normalize(points: number[][]) {
-  var yMin = Infinity;
-  var xMin = Infinity;
-
-  points.forEach((point) => {
-    const [y, x] = point;
-    yMin = Math.min(yMin, y);
-    xMin = Math.min(xMin, x);
-  });
-
-  const grid = points.map((point) => {
-    const [y, x] = point;
-    return [y - yMin + 1, x - xMin + 1];
-  });
-
-  var yMax = -Infinity;
-  var xMax = -Infinity;
-
-  grid.forEach((point) => {
-    const [y, x] = point;
-    yMax = Math.max(yMax, y);
-    xMax = Math.max(xMax, x);
-  });
-
-  const allPoints: Set<string> = new Set();
-  grid.forEach((point) => {
-    const [y, x] = point;
-
-    allPoints.add(toKey(x, y));
-  });
-  return { yMax, xMax, allPoints };
-}
-
-function getPoints(instructions: { direction: string; length: number }[]) {
-  var point = [-1, -1];
-
-  const points = [point];
-  instructions.forEach((instruction) => {
-    const { direction, length } = instruction;
-    for (var i = 0; i < length; i++) {
-      point = getNextPoint(point, direction);
-      points.push(point);
-    }
-  });
-  return points;
-}
-
-function printGrid(allPoints: Set<string>) {
-  for (var y = 0; y <= yMax + 1; y++) {
-    const row: string[] = [];
-    for (var x = 0; x <= xMax + 1; x++) {
-      row.push(allPoints.has(toKey(x, y)) ? "#" : ".");
-    }
-    console.log(row.join(""));
-  }
-}
-
-var fillFrom = [
-  [0, 0],
-  [yMax + 1, xMax + 1],
-];
-
-const floodedCells: Set<string> = fill(fillFrom, allPoints, xMax, yMax);
-
-const size = (yMax + 2) * (xMax + 2);
-const part1 = size - floodedCells.size;
-console.log({ part1 });
-
-function fill(
-  start: number[][],
-  allPoints: Set<string>,
-  xMax: number,
-  yMax: number
-) {
-  const floodedCells: Set<string> = new Set();
-
-  var fillFrom: number[][] = JSON.parse(JSON.stringify(start));
-  fillFrom.forEach((cell) => {
-    const [y, x] = cell;
-    floodedCells.add(toKey(x, y));
-  });
-
-  while (fillFrom.length > 0) {
-    // logTime(floodedCells.size.toString());
-    fillFrom = fillFrom.flatMap((cell) => {
-      const [y, x] = cell;
-      const cells = get3By3(x, y).filter((cell) => {
-        const [y, x] = cell;
-        if (y < 0 || x < 0 || y > yMax + 1 || x > xMax + 1) {
-          return false;
-        }
-        if (floodedCells.has(toKey(x, y))) {
-          return false;
-        }
-        if (allPoints.has(toKey(x, y))) {
-          return false;
-        }
-
-        return true;
-      });
-      cells.forEach((cell) => {
-        const [y, x] = cell;
-        floodedCells.add(toKey(x, y));
-      });
-      return cells;
-    });
-  }
-  return floodedCells;
-}
-
-function getNextPoint(point: number[], direction: string): number[] {
+function getNextPoint(
+  point: number[],
+  direction: string,
+  length = 1
+): number[] {
   const [y, x] = point;
   switch (direction) {
     case "R":
-      return [y, x + 1];
+      return [y, x + length];
     case "D":
-      return [y + 1, x];
+      return [y + length, x];
     case "L":
-      return [y, x - 1];
+      return [y, x - length];
     case "U":
-      return [y - 1, x];
+      return [y - length, x];
     default:
       throw new Error(direction);
   }
 }
+
+const part1 = getArea(instructions);
+console.log(part1);
 
 logTime("Part 1");
 
@@ -156,38 +41,50 @@ const part2Instructions = instructions.map((instruction) => {
   const { colour } = instruction;
   const length = parseInt(colour.slice(0, 5), 16);
   const direction = dirToDirection(colour.slice(5));
-  console.log(length, direction);
   return {
     length,
     direction,
   };
 });
 
-logTime("Have instructions");
-const part2Points = getPoints(part2Instructions);
-logTime("Have points");
+const part2 = getArea(part2Instructions);
+console.log(part2);
 
-const part2: { yMax: number; xMax: number; allPoints: Set<string> } =
-  normalize(part2Points);
-logTime("Have normalised");
+function getArea(instructions: { length: number; direction: string }[]) {
+  const points2 = getAllPoints(instructions);
 
-var fillFrom = [
-  [0, 0],
-  [part2.yMax + 1, part2.xMax + 1],
-];
+  var insideArea: number = 0;
+  var outsideArea: number = 0;
+  for (var i = 0; i < points2.length - 1; i++) {
+    const a = points2[i];
+    const b = points2[i + 1];
+    const [y1, x1] = a;
+    const [y2, x2] = b;
+    const area = x1 * y2 - x2 * y1;
+    insideArea += area;
+    const edge = (Math.abs(x2 - x1) + 1) * (Math.abs(y2 - y1) + 1) - 1;
+    outsideArea += edge;
+  }
 
-const part2Flooded: Set<string> = fill(
-  fillFrom,
-  part2.allPoints,
-  part2.xMax,
-  part2.yMax
-);
-logTime("Have flooded");
-const size2 = (part2.yMax + 2) * (part2.xMax + 2);
-const part2a = size2 - part2Flooded.size;
-console.log({ part2: part2a });
+  return insideArea / 2 + outsideArea / 2 + 1;
+}
 
-// console.log(part2);
+function getAllPoints(instructions: { length: number; direction: string }[]) {
+  var [y1, x1] = [0, 0];
+  const points: number[][] = [[0, 0]];
+
+  for (var i = 0; i < instructions.length; i++) {
+    const { length, direction: dir } = instructions[i];
+    if (!(dir == "R" || dir == "L" || dir == "U" || dir == "D"))
+      throw new Error();
+
+    const nextPoint = getNextPoint([y1, x1], dir, length);
+
+    points.push(nextPoint);
+    [y1, x1] = nextPoint;
+  }
+  return points;
+}
 
 function dirToDirection(s: string) {
   switch (s) {
