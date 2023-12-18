@@ -11,42 +11,51 @@ const instructions = lines.map((line) => {
   return {
     direction: line[0],
     length: parseInt(line[1]),
-    colour: line[2].slice(1, 7),
+    colour: line[2].slice(2, 8),
   };
 });
 // console.log({ instructions });
 
 const points = getPoints(instructions);
 
-var yMin = Infinity;
-var xMin = Infinity;
+var {
+  yMax,
+  xMax,
+  allPoints,
+}: { yMax: number; xMax: number; allPoints: Set<string> } = normalize(points);
 
-points.forEach((point) => {
-  const [y, x] = point;
-  yMin = Math.min(yMin, y);
-  xMin = Math.min(xMin, x);
-});
+function normalize(points: number[][]) {
+  var yMin = Infinity;
+  var xMin = Infinity;
 
-const grid = points.map((point) => {
-  const [y, x] = point;
-  return [y - yMin + 1, x - xMin + 1];
-});
+  points.forEach((point) => {
+    const [y, x] = point;
+    yMin = Math.min(yMin, y);
+    xMin = Math.min(xMin, x);
+  });
 
-var yMax = -Infinity;
-var xMax = -Infinity;
+  const grid = points.map((point) => {
+    const [y, x] = point;
+    return [y - yMin + 1, x - xMin + 1];
+  });
 
-grid.forEach((point) => {
-  const [y, x] = point;
-  yMax = Math.max(yMax, y);
-  xMax = Math.max(xMax, x);
-});
+  var yMax = -Infinity;
+  var xMax = -Infinity;
 
-const allPoints: Set<string> = new Set();
-grid.forEach((point) => {
-  const [y, x] = point;
+  grid.forEach((point) => {
+    const [y, x] = point;
+    yMax = Math.max(yMax, y);
+    xMax = Math.max(xMax, x);
+  });
 
-  allPoints.add(toKey(x, y));
-});
+  const allPoints: Set<string> = new Set();
+  grid.forEach((point) => {
+    const [y, x] = point;
+
+    allPoints.add(toKey(x, y));
+  });
+  return { yMax, xMax, allPoints };
+}
 
 function getPoints(instructions: { direction: string; length: number }[]) {
   var point = [-1, -1];
@@ -77,13 +86,18 @@ var fillFrom = [
   [yMax + 1, xMax + 1],
 ];
 
-const floodedCells: Set<string> = fill(fillFrom, allPoints);
+const floodedCells: Set<string> = fill(fillFrom, allPoints, xMax, yMax);
 
 const size = (yMax + 2) * (xMax + 2);
 const part1 = size - floodedCells.size;
 console.log({ part1 });
 
-function fill(start: number[][], allPoints: Set<string>) {
+function fill(
+  start: number[][],
+  allPoints: Set<string>,
+  xMax: number,
+  yMax: number
+) {
   const floodedCells: Set<string> = new Set();
 
   var fillFrom: number[][] = JSON.parse(JSON.stringify(start));
@@ -137,6 +151,58 @@ function getNextPoint(point: number[], direction: string): number[] {
 }
 
 logTime("Part 1");
+
+const part2Instructions = instructions.map((instruction) => {
+  const { colour } = instruction;
+  const length = parseInt(colour.slice(0, 5), 16);
+  const direction = dirToDirection(colour.slice(5));
+  console.log(length, direction);
+  return {
+    length,
+    direction,
+  };
+});
+
+logTime("Have instructions");
+const part2Points = getPoints(part2Instructions);
+logTime("Have points");
+
+const part2: { yMax: number; xMax: number; allPoints: Set<string> } =
+  normalize(part2Points);
+logTime("Have normalised");
+
+var fillFrom = [
+  [0, 0],
+  [part2.yMax + 1, part2.xMax + 1],
+];
+
+const part2Flooded: Set<string> = fill(
+  fillFrom,
+  part2.allPoints,
+  part2.xMax,
+  part2.yMax
+);
+logTime("Have flooded");
+const size2 = (part2.yMax + 2) * (part2.xMax + 2);
+const part2a = size2 - part2Flooded.size;
+console.log({ part2: part2a });
+
+// console.log(part2);
+
+function dirToDirection(s: string) {
+  switch (s) {
+    case "0":
+      return "R";
+    case "1":
+      return "D";
+    case "2":
+      return "L";
+    case "3":
+      return "U";
+    default:
+      throw new Error();
+  }
+}
 
 logTime("Part 2");
 
