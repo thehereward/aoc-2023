@@ -66,6 +66,9 @@ function getArea(instructions: { length: number; direction: string }[]) {
     outsideArea += edge;
   }
 
+  console.log(insideArea / 2);
+  console.log(outsideArea);
+
   return insideArea / 2 + outsideArea / 2 + 1;
 }
 
