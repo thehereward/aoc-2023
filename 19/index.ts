@@ -31,9 +31,21 @@ type Part = {
 
 type Instruction = Test[];
 
-type Test = {
+type Test = Conditional | Unconditional;
+
+type BaseTest = {
   fn: (_: Part) => boolean;
   ifTrue: string;
+};
+
+type Conditional = BaseTest & {
+  type: "lessThan" | "moreThan";
+  limit: number;
+  property: "a" | "m" | "s" | "x";
+};
+
+type Unconditional = BaseTest & {
+  type: "unconditional";
 };
 
 const instructions: Map<string, Instruction> = new Map();
@@ -56,6 +68,9 @@ instructionLines.forEach((line) => {
         tests.push({
           fn,
           ifTrue,
+          type: "moreThan",
+          limit,
+          property,
         });
       } else if (test.indexOf("<") != -1) {
         // less than
@@ -70,6 +85,9 @@ instructionLines.forEach((line) => {
         tests.push({
           fn,
           ifTrue,
+          type: "lessThan",
+          limit,
+          property,
         });
       } else {
         // panic!
@@ -82,6 +100,7 @@ instructionLines.forEach((line) => {
       tests.push({
         fn,
         ifTrue: term,
+        type: "unconditional",
       });
     }
   });
@@ -105,8 +124,8 @@ const parts = partLines
   })
   .map((p): Part => p);
 
-const accepted: Part[] = [];
-const rejected: Part[] = [];
+const acceptedPart1: Part[] = [];
+const rejectedPart1: Part[] = [];
 
 parts.map((part) => {
   var key = "in";
@@ -127,15 +146,15 @@ parts.map((part) => {
   }
 
   if (key == "A") {
-    accepted.push(part);
+    acceptedPart1.push(part);
   } else {
-    rejected.push(part);
+    rejectedPart1.push(part);
   }
 });
 
 // console.log(accepted);
 
-const sums = accepted.map((part) => {
+const sums = acceptedPart1.map((part) => {
   return part.a + part.m + part.s + part.x;
 });
 // console.log(sums);
@@ -148,14 +167,103 @@ function getInstruction(key: string): Instruction {
   return inst;
 }
 
+function getPartCopy(key: string): AllPart {
+  const part = allParts.get(key);
+  if (!part) {
+    throw new Error();
+  }
+  return copyPart(part);
+}
+
 const part1 = sums.reduce(sum);
 console.log(part1);
-
 logTime("Part 1");
 
+// console.log(instructionLines);
+
+type AllPart = {
+  a: number[];
+  m: number[];
+  s: number[];
+  x: number[];
+};
+const allPart: AllPart = {
+  a: [1, 4000],
+  m: [1, 4000],
+  s: [1, 4000],
+  x: [1, 4000],
+};
+
+const keys: string[] = ["in"];
+const allParts: Map<string, AllPart> = new Map();
+allParts.set("in", allPart);
+
+const acceptedPart2: AllPart[] = [];
+const rejectedPart2: AllPart[] = [];
+
+while (keys.length > 0) {
+  const key = keys.shift();
+  if (!key) {
+    throw new Error();
+  }
+  const inst = getInstruction(key);
+
+  const basePart = getPartCopy(key);
+  inst.forEach((test) => {
+    var part = copyPart(basePart);
+    const { ifTrue, type } = test;
+    switch (type) {
+      case "lessThan":
+        part[test.property][1] = test.limit - 1;
+        basePart[test.property][0] = test.limit;
+        savePart(ifTrue, part);
+        break;
+      case "moreThan":
+        part[test.property][0] = test.limit + 1;
+        basePart[test.property][1] = test.limit;
+        savePart(ifTrue, part);
+        break;
+      case "unconditional":
+        savePart(ifTrue, part);
+    }
+  });
+}
+
+const ranges = acceptedPart2.map((part) => {
+  return (
+    (part.a[1] - part.a[0] + 1) *
+    (part.m[1] - part.m[0] + 1) *
+    (part.s[1] - part.s[0] + 1) *
+    (part.x[1] - part.x[0] + 1)
+  );
+});
+
+console.log(ranges.reduce(sum));
 logTime("Part 2");
 
 export {};
+
+function copyPart(part: AllPart): AllPart {
+  return JSON.parse(JSON.stringify(part));
+}
+
+function savePart(key: string, part: AllPart) {
+  switch (key) {
+    case "A":
+      acceptedPart2.push(part);
+      break;
+    case "R":
+      rejectedPart2.push(part);
+      break;
+    default:
+      if (allParts.has(key)) {
+        // Panic
+        throw new Error("multiple ways to a test");
+      }
+      allParts.set(key, part);
+      keys.push(key);
+  }
+}
 
 function assertProperty(value: string): "a" | "m" | "s" | "x" {
   if (!(value == "a" || value == "m" || value == "s" || value == "x"))
