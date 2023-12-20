@@ -76,6 +76,7 @@ function sendPulse(pulse: Pulse): Pulse[] {
   const module = moduleMap.get(destination);
   if (!module) {
     unfoundSet.add(destination);
+    // logTime(`Pulse ${value} sent to ${destination}`);
     return [];
   }
   switch (module.type) {
@@ -121,14 +122,17 @@ const stateAfterPressingButton: {
   highPulseCount: number;
 }[] = [];
 var count = 1000;
-
+var rxCount = 0;
+var part2 = Infinity;
+var hasPrinted = false;
 while (count > 0) {
-  const { anyOutputsHigh, lowPulseCount, highPulseCount } = pressButton();
+  const { lowPulseCount, highPulseCount } = pressButton();
 
   stateAfterPressingButton.push({
     lowPulseCount,
     highPulseCount,
   });
+
   count--;
 }
 
@@ -151,6 +155,61 @@ console.log(part1.highPulseCount * part1.lowPulseCount);
 
 logTime("Part 1");
 
+modules.forEach((module) => {
+  module.destinations.forEach((destination) => {
+    const destMod = moduleMap.get(destination);
+    if (!destMod) {
+      unfoundSet.add(destination);
+      return;
+    }
+    destMod.inputs.set(module.name, false);
+  });
+});
+
+var rxSentSignal = false;
+var numberOfPresses = 0;
+var gfOutCounts: number[][];
+var lastGfOutCount = 0;
+
+while (!rxSentSignal) {
+  pressButton();
+  numberOfPresses++;
+  if (rxCount == 1) {
+    break;
+  }
+  // if (numberOfPresses % 1000 == 0) {
+  //   logTime(numberOfPresses.toString());
+  // }
+
+  // modules.forEach((m) => console.log(m.name, m.output));
+  // break;
+
+  const gf = moduleMap.get("gf");
+  if (!gf) {
+    throw new Error();
+  }
+
+  var gfOutCount = 0;
+  gf.inputs.forEach((i) => {
+    if (i) {
+      gfOutCount++;
+    }
+    if (gfOutCount != lastGfOutCount) {
+      gfOutCounts.push([numberOfPresses, gfOutCount]);
+      lastGfOutCount = gfOutCount;
+      console.log(numberOfPresses, gfOutCount);
+    }
+  });
+
+  // if (!gf.output) {
+  //   console.log(numberOfPresses);
+  //   console.log(gf);
+  //   break;
+  // }
+  // Day 17 Part 2 brute-force took 83227400ms
+}
+
+console.log(numberOfPresses);
 logTime("Part 2");
 
 export {};
@@ -175,6 +234,10 @@ function pressButton() {
       highPulseCount++;
     } else {
       lowPulseCount++;
+    }
+
+    if (pulse.value == false && pulse.destination == "rx") {
+      rxCount++;
     }
     const newPulses = sendPulse(pulse);
     pulses.push(...newPulses);
