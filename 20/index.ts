@@ -19,6 +19,11 @@ type Module = {
   output: boolean;
   inputs: Map<string, boolean>;
 };
+
+// Manual inspection tells us these modules must pulse high at the same time to make rx pulse low
+const mustPulseHigh = ["pg", "sp", "qs", "sv"];
+const pulsedHighOn: number[] = [];
+
 const modules: Module[] = data
   .map((line) => line.split(" -> "))
   .map((line) => {
@@ -51,19 +56,7 @@ const modules: Module[] = data
 const moduleMap: Map<string, Module> = new Map();
 modules.forEach((module) => moduleMap.set(module.name, module));
 
-// Initialise all inputs - mainly for conjunctions
-modules.forEach((module) => {
-  module.destinations.forEach((destination) => {
-    const destMod = moduleMap.get(destination);
-    if (!destMod) {
-      unfoundSet.add(destination);
-      return;
-    }
-    destMod.inputs.set(module.name, false);
-  });
-});
-
-// console.log(moduleMap);
+resetModules();
 
 type Pulse = {
   source: string;
@@ -71,12 +64,25 @@ type Pulse = {
   value: boolean;
 };
 
+function resetModules() {
+  modules.forEach((module) => {
+    module.output = false;
+    module.destinations.forEach((destination) => {
+      const destMod = moduleMap.get(destination);
+      if (!destMod) {
+        unfoundSet.add(destination);
+        return;
+      }
+      destMod.inputs.set(module.name, false);
+    });
+  });
+}
+
 function sendPulse(pulse: Pulse): Pulse[] {
   const { source, destination, value } = pulse;
   const module = moduleMap.get(destination);
   if (!module) {
     unfoundSet.add(destination);
-    // logTime(`Pulse ${value} sent to ${destination}`);
     return [];
   }
   switch (module.type) {
@@ -122,9 +128,6 @@ const stateAfterPressingButton: {
   highPulseCount: number;
 }[] = [];
 var count = 1000;
-var rxCount = 0;
-var part2 = Infinity;
-var hasPrinted = false;
 while (count > 0) {
   const { lowPulseCount, highPulseCount } = pressButton();
 
@@ -136,8 +139,6 @@ while (count > 0) {
   count--;
 }
 
-// console.log(modules);
-// console.log(stateAfterPressingButton);
 const part1 = stateAfterPressingButton.reduce(
   (a, c) => {
     return {
@@ -150,70 +151,43 @@ const part1 = stateAfterPressingButton.reduce(
     highPulseCount: 0,
   }
 );
-console.log(unfoundSet);
+
 console.log(part1.highPulseCount * part1.lowPulseCount);
 
 logTime("Part 1");
 
-modules.forEach((module) => {
-  module.destinations.forEach((destination) => {
-    const destMod = moduleMap.get(destination);
-    if (!destMod) {
-      unfoundSet.add(destination);
-      return;
-    }
-    destMod.inputs.set(module.name, false);
-  });
-});
+resetModules();
 
-var rxSentSignal = false;
-var numberOfPresses = 0;
-var gfOutCounts: number[][];
-var lastGfOutCount = 0;
+var count = 0;
+while (true) {
+  const { gfPulsedHigh } = pressButton();
+  count++;
 
-while (!rxSentSignal) {
-  pressButton();
-  numberOfPresses++;
-  if (rxCount == 1) {
+  if (gfPulsedHigh) {
+    pulsedHighOn.push(count);
+  }
+
+  if (pulsedHighOn.length == mustPulseHigh.length) {
     break;
   }
-  // if (numberOfPresses % 1000 == 0) {
-  //   logTime(numberOfPresses.toString());
-  // }
-
-  // modules.forEach((m) => console.log(m.name, m.output));
-  // break;
-
-  const gf = moduleMap.get("gf");
-  if (!gf) {
-    throw new Error();
-  }
-
-  var gfOutCount = 0;
-  gf.inputs.forEach((i) => {
-    if (i) {
-      gfOutCount++;
-    }
-    if (gfOutCount != lastGfOutCount) {
-      gfOutCounts.push([numberOfPresses, gfOutCount]);
-      lastGfOutCount = gfOutCount;
-      console.log(numberOfPresses, gfOutCount);
-    }
-  });
-
-  // if (!gf.output) {
-  //   console.log(numberOfPresses);
-  //   console.log(gf);
-  //   break;
-  // }
-  // Day 17 Part 2 brute-force took 83227400ms
 }
-
-console.log(numberOfPresses);
+console.log(pulsedHighOn.reduce((a, b) => a * b));
 logTime("Part 2");
+
+// cycle time
+// nv --> 4052 // 4051
+// jq --> 3920 // 3919
+// jp --> 3762 // 3761
+// bx --> 3908 // 3907
+// lcm : 7297580117520
+// 7297580117519 is too low
+// 7297580117520 is too low
+// 14595160235039 is too low
+// 233283622908263 is correct
 
 export {};
 function pressButton() {
+  var gfPulsedHigh = false;
   const pulses: Pulse[] = [];
 
   pulses.push({
@@ -236,9 +210,13 @@ function pressButton() {
       lowPulseCount++;
     }
 
-    if (pulse.value == false && pulse.destination == "rx") {
-      rxCount++;
+    if (
+      pulse.value == true &&
+      mustPulseHigh.findIndex((must) => must == pulse.source) != -1
+    ) {
+      gfPulsedHigh = true;
     }
+
     const newPulses = sendPulse(pulse);
     pulses.push(...newPulses);
   }
@@ -246,5 +224,5 @@ function pressButton() {
   const anyOutputsHigh = modules.reduce((a, c) => {
     return c.output || a;
   }, false);
-  return { anyOutputsHigh, lowPulseCount, highPulseCount };
+  return { anyOutputsHigh, lowPulseCount, highPulseCount, gfPulsedHigh };
 }
