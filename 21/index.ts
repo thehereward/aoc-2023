@@ -42,8 +42,8 @@ logTime();
 console.log(50, 1594, runForStepsPart2(50));
 logTime();
 console.log(100, 6536, runForStepsPart2(100));
-// logTime();
-// console.log(500, 167004, runForStepsPart2(500));
+logTime();
+console.log(500, 167004, runForStepsPart2(500));
 // console.log(1000, 668697, runForStepsPart2(1000));
 // console.log(5000, 16733044, runForStepsPart2(5000));
 
@@ -172,27 +172,24 @@ function getUnique(locations: number[][]) {
 }
 
 function getUniqueLocations(locations: Location[]): Location[] {
-  const s: Map<string, string[]> = new Map();
+  const s: Map<string, number[][]> = new Map();
   locations.forEach((location) => {
     const key = toKey(location.x, location.y);
     const existing = s.get(key);
     if (!existing) {
-      s.set(
-        key,
-        location.grids.map((g) => toKey(g[0], g[1]))
-      );
+      s.set(key, location.grids);
     } else {
-      existing.push(...location.grids.map((g) => toKey(g[0], g[1])));
-      s.set(key, [...new Set(existing)]);
+      s.set(key, existing.concat(location.grids));
     }
   });
   const returns: Location[] = [];
   s.forEach((value, key) => {
     const [x, y] = key.split("|");
+    const grids = [...new Set(value.map((p) => toKey(p[0], p[1])))];
     returns.push({
       x: parseInt(x),
       y: parseInt(y),
-      grids: value.map((k) => k.split("|").map((c) => parseInt(c))),
+      grids: grids.map((k) => k.split("|").map((c) => parseInt(c))),
     });
   });
   return returns;
