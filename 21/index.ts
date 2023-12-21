@@ -85,7 +85,7 @@ function getNextStepsPart1(location: number[]) {
 type Location = {
   x: number;
   y: number;
-  grids: number[][];
+  grids: number[];
 };
 
 function runForStepsPart2(limit: number) {
@@ -93,7 +93,7 @@ function runForStepsPart2(limit: number) {
     {
       x: startCoords[1],
       y: startCoords[0],
-      grids: [[0, 0]],
+      grids: [0],
     },
   ];
   for (var count = 0; count < limit; count++) {
@@ -121,7 +121,7 @@ function getNextStepsPart2(location: Location) {
       return {
         x,
         y: (y + yMax) % yMax,
-        grids: location.grids.map((g) => [g[0], g[1] - 1]),
+        grids: location.grids.map((g) => g - 1),
       };
     }
     if (x < 0) {
@@ -130,7 +130,7 @@ function getNextStepsPart2(location: Location) {
       return {
         x: newX,
         y,
-        grids: location.grids.map((g) => [g[0] - 1, g[1]]),
+        grids: location.grids.map((g) => g - 1000),
       };
     }
     if (y >= yMax) {
@@ -138,7 +138,7 @@ function getNextStepsPart2(location: Location) {
       return {
         x,
         y: y % yMax,
-        grids: location.grids.map((g) => [g[0], g[1] + 1]),
+        grids: location.grids.map((g) => g + 1),
       };
     }
     if (x >= xMax) {
@@ -146,7 +146,7 @@ function getNextStepsPart2(location: Location) {
       return {
         x: x % xMax,
         y,
-        grids: location.grids.map((g) => [g[0] + 1, g[1]]),
+        grids: location.grids.map((g) => g + 1000),
       };
     }
     return {
@@ -172,7 +172,7 @@ function getUnique(locations: number[][]) {
 }
 
 function getUniqueLocations(locations: Location[]): Location[] {
-  const s: Map<string, number[][]> = new Map();
+  const s: Map<string, number[]> = new Map();
   locations.forEach((location) => {
     const key = toKey(location.x, location.y);
     const existing = s.get(key);
@@ -185,11 +185,10 @@ function getUniqueLocations(locations: Location[]): Location[] {
   const returns: Location[] = [];
   s.forEach((value, key) => {
     const [x, y] = key.split("|");
-    const grids = [...new Set(value.map((p) => toKey(p[0], p[1])))];
     returns.push({
       x: parseInt(x),
       y: parseInt(y),
-      grids: grids.map((k) => k.split("|").map((c) => parseInt(c))),
+      grids: [...new Set(value)],
     });
   });
   return returns;
