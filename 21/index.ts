@@ -35,18 +35,22 @@ console.log(part1.length);
 
 logTime("Part 1");
 
-console.log(6, 16, runForStepsPart2(6));
-logTime();
-console.log(10, 50, runForStepsPart2(10));
-logTime();
-console.log(50, 1594, runForStepsPart2(50));
-logTime();
-console.log(100, 6536, runForStepsPart2(100));
-logTime();
-console.log(500, 167004, runForStepsPart2(500));
+// console.log(6, 16, runForStepsPart2(6));
+// logTime();
+// console.log(10, 50, runForStepsPart2(10));
+// logTime();
+// console.log(50, 1594, runForStepsPart2(50));
+// logTime();
+// console.log(100, 6536, runForStepsPart2(100));
+// logTime();
+// console.log(500, 167004, runForStepsPart2(500));
+// logTime();
 // console.log(1000, 668697, runForStepsPart2(1000));
+// logTime();
 // console.log(5000, 16733044, runForStepsPart2(5000));
 
+const part2 = runForStepsPart2(26501365);
+console.log(part2);
 logTime("Part 2");
 export {};
 
@@ -89,7 +93,9 @@ type Location = {
 };
 
 function runForStepsPart2(limit: number) {
-  var locations: Location[] = [
+  var oddLocations: Map<string, Location> = new Map();
+  var evenLocations: Map<string, Location> = new Map();
+  var newLocations = [
     {
       x: startCoords[1],
       y: startCoords[0],
@@ -97,18 +103,104 @@ function runForStepsPart2(limit: number) {
     },
   ];
   for (var count = 0; count < limit; count++) {
-    // console.log(count, locations.length);
+    if (count % 100 == 0) {
+      logTime(`${count} - ${oddLocations.size}`);
+    }
+    var existingLocations = count % 2 == 0 ? oddLocations : evenLocations;
+    // console.log(count);
     // locations.sort((a, b) => a.x - b.x);
     // locations.forEach((c) => console.log(c));
-    locations = locations.flatMap((location) => {
+    var nextLocations = newLocations.flatMap((location) => {
       return getNextStepsPart2(location);
     });
-    locations = getUniqueLocations(locations);
+    nextLocations = [
+      ...new Set(nextLocations.map((m) => JSON.stringify(m))),
+    ].map((p) => JSON.parse(p));
+
+    const newSet: Map<string, Set<number>> = new Map();
+    nextLocations.forEach((location) => {
+      const key = toKey(location.x, location.y);
+      if (!newSet.has(key)) {
+        newSet.set(key, new Set());
+      }
+      const n = newSet.get(key);
+      if (!n) throw new Error();
+      location.grids.forEach((grid) => n.add(grid));
+    });
+    nextLocations = [];
+
+    newSet.forEach((value, key) => {
+      const [x, y] = key.split("|").map((p) => parseInt(p));
+      nextLocations.push({
+        x,
+        y,
+        grids: [...value],
+      });
+    });
+
+    // nextLocations = [
+    //   ...new Set(nextLocations.map((m) => JSON.stringify(m))),
+    // ].map((p) => JSON.parse(p));
+    // console.log("");
+    // console.log({ existingLocations });
+    // console.log({ nextLocations });
+    var t = false;
+    newLocations = nextLocations.filter((loc) => {
+      const key = toKey(loc.x, loc.y);
+      if (!existingLocations.has(key)) {
+        // console.log("new key");
+        return true;
+      }
+      //   else {
+      //     return false;
+      //   }
+      const existing = existingLocations.get(key);
+      if (!existing) throw new Error("Seriously");
+      //   if (loc.grids.length > 1) console.log("There were more than 1 grid");
+      //   console.log(loc.grids);
+      loc.grids = loc.grids.filter(
+        (g) => existing.grids.findIndex((p) => g == p) == -1
+      );
+      if (loc.grids.length > 0) {
+        // t = count > 100 ? true : false;
+        return true;
+      } else {
+        return false;
+      }
+    });
+    if (t) {
+      console.log("");
+      console.log(newLocations);
+      console.log(newLocations.length);
+      console.log(newLocations.map((l) => l.grids.length).reduce(sum));
+      //   console.log(existingLocations);
+      break;
+    }
+    // if (count % 100 == 0) {
+    //   logTime(`${count} ${newLocations.length}`);
+    // }
+    nextLocations.forEach((loc) => {
+      var existing = existingLocations.get(toKey(loc.x, loc.y));
+      if (!existing) {
+        existing = {
+          x: loc.x,
+          y: loc.y,
+          grids: [...loc.grids],
+        };
+        existingLocations.set(toKey(existing.x, existing.y), existing);
+      }
+      existing.grids.push(...loc.grids);
+      existing.grids = [...new Set(existing.grids)];
+    });
   }
-  locations.sort((a, b) => a.x - b.x);
+  var locations = limit % 2 == 0 ? evenLocations : oddLocations;
+  //   console.log(locations);
+  var count = 0;
+  locations.forEach((loc) => (count = count + loc.grids.length));
+  //   locations.sort((a, b) => a.x - b.x);
   //   console.log(locations.length);
   //   locations.forEach((c) => console.log(c));
-  return locations.map((location) => location.grids.length).reduce(sum);
+  return count;
 }
 
 function getNextStepsPart2(location: Location) {
