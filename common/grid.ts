@@ -36,14 +36,14 @@ export function make2DGrid<T>(xMax: number, yMax: number, fill: T) {
 }
 
 export function printGrid(
-  grid: Record<string, string>,
+  grid: Map<string, string>,
   xMax: number,
   yMax: number
 ) {
   for (var y = 0; y <= yMax; y++) {
     const line: string[] = [];
     for (var x = 0; x <= xMax; x++) {
-      line.push(grid[toKey(x, y)] || " ");
+      line.push(grid.get(toKey(x, y)) || " ");
     }
     console.log(line.join(""));
   }
