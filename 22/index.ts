@@ -149,9 +149,9 @@ const blocksToProcess = finishedBlocks.flatMap((block) => [
 
 var count = 1;
 while (blocksToProcess.length > 0) {
-  if (count % 1000 == 0) {
-    logTime(`Blocks to process: ${blocksToProcess.length}`);
-  }
+  //   if (count % 1000 == 0) {
+  //     logTime(`Blocks to process: ${blocksToProcess.length}`);
+  //   }
   count++;
   const nextBlock = assertDefined(blocksToProcess.shift());
   //   console.log({ nextBlock });
