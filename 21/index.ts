@@ -49,8 +49,30 @@ logTime("Part 1");
 // logTime();
 // console.log(5000, 16733044, runForStepsPart2(5000));
 
-const part2 = runForStepsPart2(26501365);
-console.log(part2);
+// const part2 = runForStepsPart2(26501365);
+// console.log(part2);
+
+const stepsToEdge = Math.floor(xMax / 2);
+const stepsToGo = stepsToEdge + xMax * 0;
+console.log({ xMax });
+runForStepsPart2(stepsToGo);
+
+const gridSize = allChars.size;
+var numberOfRocks = 0;
+allChars.forEach(
+  (value) => (numberOfRocks = numberOfRocks + (value == "#" ? 1 : 0))
+);
+var numberofFields = 0;
+allChars.forEach(
+  (value) => (numberofFields = numberofFields + (value != "#" ? 1 : 0))
+);
+const numberOfSpaces = gridSize - numberOfRocks;
+
+console.log(gridSize);
+console.log(numberOfRocks);
+console.log(numberOfSpaces);
+console.log(numberofFields);
+
 logTime("Part 2");
 export {};
 
@@ -103,9 +125,24 @@ function runForStepsPart2(limit: number) {
     },
   ];
   for (var count = 0; count < limit; count++) {
-    if (count % 100 == 0) {
-      logTime(`${count} - ${oddLocations.size}`);
-    }
+    // if (count % 100 == 0) {
+    //   console.log("");
+    //   logGrid(oddLocations, 0, evenLocations, count);
+    //   logGrid(oddLocations, 1, evenLocations, count);
+    //   logGrid(oddLocations, -1, evenLocations, count);
+    //   logGrid(oddLocations, 1000, evenLocations, count);
+    //   logGrid(oddLocations, -1000, evenLocations, count);
+
+    //   logGrid(oddLocations, 1001, evenLocations, count);
+    //   logGrid(oddLocations, 999, evenLocations, count);
+    //   logGrid(oddLocations, -999, evenLocations, count);
+    //   logGrid(oddLocations, -1001, evenLocations, count);
+
+    //   logGrid(oddLocations, 4000, evenLocations, count);
+    //   logGrid(oddLocations, 5000, evenLocations, count);
+    //   logGrid(oddLocations, 6000, evenLocations, count);
+    //   logGrid(oddLocations, 7000, evenLocations, count);
+    // }
     var existingLocations = count % 2 == 0 ? oddLocations : evenLocations;
     // console.log(count);
     // locations.sort((a, b) => a.x - b.x);
@@ -194,6 +231,25 @@ function runForStepsPart2(limit: number) {
     });
   }
   var locations = limit % 2 == 0 ? evenLocations : oddLocations;
+
+  const gridsMap: Map<number, Set<string>> = new Map();
+  locations.forEach((loc) => {
+    const { x, y, grids } = loc;
+    const key = toKey(x, y);
+    grids.forEach((grid) => {
+      if (!gridsMap.has(grid)) {
+        gridsMap.set(grid, new Set());
+      }
+      const s = gridsMap.get(grid);
+      if (!s) throw new Error();
+      s.add(key);
+    });
+  });
+
+  gridsMap.forEach((_, key) => {
+    logGridSize(gridsMap, key);
+  });
+
   //   console.log(locations);
   var count = 0;
   locations.forEach((loc) => (count = count + loc.grids.length));
@@ -201,6 +257,41 @@ function runForStepsPart2(limit: number) {
   //   console.log(locations.length);
   //   locations.forEach((c) => console.log(c));
   return count;
+}
+
+function logGridSize(gridsMap: Map<number, Set<string>>, gridRef: number) {
+  const s = gridsMap.get(gridRef);
+  if (!s) throw new Error();
+  const gridString = `${gridRef}`;
+  logTime(`${gridString.padStart(6, " ")} | ${s.size}`);
+}
+
+function logGrid(
+  oddLocations: Map<string, Location>,
+  gridRef: number,
+  evenLocations: Map<string, Location>,
+  count: number
+) {
+  const { oddCount, evenCount } = getCountFor(
+    oddLocations,
+    gridRef,
+    evenLocations
+  );
+  logTime(`${count} - ${gridRef} -  ${oddCount} - ${evenCount}`);
+}
+
+function getCountFor(
+  oddLocations: Map<string, Location>,
+  gridRef: number,
+  evenLocations: Map<string, Location>
+) {
+  const odd: Location[] = [];
+  oddLocations.forEach((l) => odd.push(l));
+  const oddCount = odd.filter((l) => l.grids.indexOf(gridRef) != -1).length;
+  const even: Location[] = [];
+  evenLocations.forEach((l) => even.push(l));
+  const evenCount = even.filter((l) => l.grids.indexOf(gridRef) != -1).length;
+  return { oddCount, evenCount };
 }
 
 function getNextStepsPart2(location: Location) {
