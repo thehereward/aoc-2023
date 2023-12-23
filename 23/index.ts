@@ -1,16 +1,13 @@
 import { assertDefined, sum } from "../common";
 import { readFile, getTimeLogger } from "../common";
+import { asKey } from "../common/grid";
+import { fromKey } from "../common/grid";
 import { toKey, get3By3, getNSEW } from "../common/grid";
-import { get0To } from "../common/range";
 
 const logTime = getTimeLogger();
 
 var data = readFile("input");
 const grid = data.map((line) => line.split(""));
-
-function asKey(point: number[]): string {
-  return toKey(point[1], point[0]);
-}
 
 const allChars: Map<string, string> = new Map();
 grid.forEach((line, y) => {
@@ -267,9 +264,4 @@ function addToAccumulator(
   }
   const b = assertDefined(a.get(start));
   b.push({ next: end, size: size });
-}
-
-function fromKey(latest: string): number[] {
-  const [x, y] = latest.split("|").map((c) => parseInt(c));
-  return [y, x];
 }

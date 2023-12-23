@@ -25,6 +25,15 @@ export function toKey(x: any, y: any) {
   return `${x}|${y}`;
 }
 
+export function fromKey(key: string): number[] {
+  const [x, y] = key.split("|").map((c) => parseInt(c));
+  return [y, x];
+}
+
+export function asKey(point: number[]): string {
+  return toKey(point[1], point[0]);
+}
+
 export function make2DGrid<T>(xMax: number, yMax: number, fill: T) {
   const grid: Record<string, T> = {};
   for (var yy = -1; yy <= yMax; yy++) {
